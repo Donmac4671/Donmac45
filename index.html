@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+  <title>Donmac Data Hub · polished UI</title>
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Paystack inline script -->
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #e2eaf2;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1400px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 30px rgba(0,20,30,0.1);
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* ----- TOP BAR ----- */
+    .top-bar {
+      background: #0b2b3c;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+    }
+
+    .logo-area h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .agent-badge {
+      background: #1f4e6f;
+      padding: 6px 16px;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .agent-badge i {
+      color: #fbbf24;
+    }
+
+    .balance-pill {
+      background: #0f3b4c;
+      padding: 6px 20px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      border: 1px solid #3b7a94;
+    }
+
+    .balance-pill i {
+      margin-right: 6px;
+      color: #fbbf24;
+    }
+
+    /* ----- HAMBURGER (mobile only) ----- */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 2rem;
+      color: white;
+      cursor: pointer;
+      width: 48px;
+      height: 48px;
+      align-items: center;
+      justify-content: center;
+      margin-right: 8px;
+    }
+
+    /* ----- MAIN LAYOUT: sidebar + content ----- */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ----- SIDEBAR DESKTOP ----- */
+    .sidebar-desktop {
+      width: 260px;
+      background: #ffffff;
+      border-right: 1px solid #d9e2ec;
+      padding: 28px 0 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-desktop .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 16px 28px;
+      gap: 16px;
+      color: #1e3a4a;
+      font-weight: 500;
+      border-left: 4px solid transparent;
+      cursor: pointer;
+    }
+
+    .sidebar-desktop .nav-item i {
+      width: 24px;
+      color: #4f6f8f;
+      font-size: 1.2rem;
+    }
+
+    .sidebar-desktop .nav-item.active {
+      background: #eef6ff;
+      border-left-color: #f5a623;
+      font-weight: 600;
+    }
+
+    .sidebar-desktop .nav-item.active i {
+      color: #f5a623;
+    }
+
+    /* ----- MOBILE DRAWER ----- */
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      left: -280px;
+      width: 260px;
+      height: 100%;
+      background: white;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+      transition: left 0.25s ease;
+      z-index: 200;
+      padding: 24px 0;
+      border-right: 1px solid #e2e8f0;
+      overflow-y: auto;
+    }
+
+    .mobile-drawer.open {
+      left: 0;
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px 20px;
+      border-bottom: 1px solid #edf2f7;
+      margin-bottom: 16px;
+    }
+
+    .drawer-header h2 {
+      font-size: 1.3rem;
+      color: #0b2b3c;
+    }
+
+    .close-drawer {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      color: #5a748b;
+      padding: 0 8px;
+    }
+
+    .drawer-item {
+      display: flex;
+      align-items: center;
+      padding: 18px 26px;
+      color: #1e3a4a;
+      font-weight: 500;
+      gap: 18px;
+      border-left: 4px solid transparent;
+      cursor: pointer;
+    }
+
+    .drawer-item i {
+      width: 26px;
+      color: #3b7a94;
+      font-size: 1.2rem;
+    }
+
+    .drawer-item.active {
+      background: #eef6ff;
+      border-left-color: #f5a623;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.3);
+      z-index: 150;
+    }
+
+    .overlay.show {
+      display: block;
+    }
+
+    /* ----- CONTENT AREA ----- */
+    .content-area {
+      flex: 1;
+      background: #f8fafd;
+      padding: 28px 30px;
+      overflow-y: auto;
+      padding-bottom: 100px;
+    }
+
+    /* stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 22px;
+      padding: 20px 18px;
+      border: 1px solid #eef2f6;
+    }
+
+    .stat-title {
+      color: #62748c;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .stat-number {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #0b2b3c;
+    }
+
+    /* wallet row */
+    .wallet-row {
+      margin-bottom: 28px;
+    }
+
+    .wallet-box {
+      background: linear-gradient(145deg, #102e3c, #174657);
+      border-radius: 26px;
+      padding: 22px 28px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .wallet-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .wallet-left .amount {
+      font-size: 2.2rem;
+      font-weight: 700;
+    }
+
+    .wallet-box .action-btn {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 60px;
+      padding: 12px 28px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
+    /* filter bar */
+    .filter-bar {
+      background: white;
+      border-radius: 60px;
+      padding: 12px 22px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 24px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .filter-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f1f5f9;
+      padding: 6px 18px;
+      border-radius: 40px;
+    }
+
+    .filter-item i {
+      color: #4f6f8f;
+    }
+
+    .filter-item select, .filter-item input {
+      border: none;
+      background: transparent;
+      padding: 6px 0;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    /* data bundles vertical list */
+    .bundles-section {
+      margin: 28px 0 20px;
+    }
+
+    .bundles-section h3 {
+      font-size: 1.3rem;
+      color: #0f2a36;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bundles-section .subhead {
+      color: #4f6f8f;
+      font-size: 0.9rem;
+      margin-bottom: 22px;
+    }
+
+    .bundle-vertical-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bundle-row-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+
+    .bundle-row-item:hover {
+      background: #f4f9ff;
+      border-color: #f5a623;
+    }
+
+    .bundle-info h4 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #102e3c;
+    }
+
+    .bundle-info p {
+      color: #3b7a94;
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    .bundle-tag {
+      background: #eef3fc;
+      padding: 8px 20px;
+      border-radius: 60px;
+      font-weight: 600;
+      color: #0b2b3c;
+      font-size: 0.9rem;
+    }
+
+    /* ----- PAGE SECTIONS ----- */
+    .page-section {
+      display: none;
+    }
+
+    .page-section.active {
+      display: block;
+    }
+
+    /* TOP UP PAGE - beautifully styled */
+    .topup-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .topup-stat-card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      border: 1px solid #eef2f6;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .topup-stat-card .label {
+      color: #62748c;
+      font-size: 0.8rem;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .topup-stat-card .value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #0b2b3c;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: white;
+      padding: 16px 24px;
+      border-radius: 60px;
+      margin-bottom: 24px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .filter-date {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f1f5f9;
+      padding: 8px 20px;
+      border-radius: 40px;
+    }
+
+    .filter-date input {
+      border: none;
+      background: transparent;
+      font-size: 0.9rem;
+    }
+
+    .wallet-topup-section {
+      background: white;
+      border-radius: 28px;
+      padding: 28px;
+      margin: 24px 0;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.03);
+    }
+
+    .wallet-topup-section h3 {
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.3rem;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      font-size: 0.9rem;
+      color: #4f6f8f;
+      font-weight: 500;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 16px 20px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 60px;
+      font-size: 1rem;
+      transition: all 0.2s;
+      background: #f8fafd;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #f5a623;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(245,166,35,0.1);
+    }
+
+    .payment-method-selector {
+      display: flex;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .payment-method-card {
+      flex: 1;
+      background: #f8fafd;
+      border: 2px solid #e2e8f0;
+      border-radius: 60px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+
+    .payment-method-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .payment-method-card.selected {
+      border-color: #f5a623;
+      background: #fef3c7;
+    }
+
+    .mobile-money-details {
+      background: #f8fafd;
+      border-radius: 24px;
+      padding: 28px;
+      margin: 20px 0;
+      border: 1px solid #e2e8f0;
+    }
+
+    .detail-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .copy-btn {
+      background: #0b2b3c;
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 8px 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #1f4e6f;
+      transform: scale(1.05);
+    }
+
+    .screenshot-upload {
+      margin: 24px 0;
+    }
+
+    .screenshot-upload label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 500;
+      color: #1e3a4a;
+    }
+
+    .screenshot-upload input[type="file"] {
+      width: 100%;
+      padding: 16px;
+      border: 2px dashed #cbd5e0;
+      border-radius: 20px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .whatsapp-note {
+      background: #e8f5e9;
+      border-radius: 16px;
+      padding: 18px;
+      margin: 20px 0;
+      color: #2e7d32;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .whatsapp-note i {
+      font-size: 1.5rem;
+    }
+
+    .paystack-info {
+      background: #f8fafd;
+      border-radius: 24px;
+      padding: 28px;
+      margin: 20px 0;
+      border: 1px solid #e2e8f0;
+    }
+
+    .fee-note {
+      background: #fff3cd;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 20px;
+      color: #856404;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      background: #0b2b3c;
+      border: none;
+      color: white;
+      padding: 16px 32px;
+      border-radius: 60px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #1f4e6f;
+      transition: all 0.2s;
+      font-size: 1rem;
+    }
+
+    .btn:hover {
+      background: #1f4e6f;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    .btn-outline {
+      background: white;
+      color: #1e4057;
+      border: 1.5px solid #b4c8da;
+    }
+
+    .btn-outline:hover {
+      background: #f1f5f9;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    /* orders table */
+    .recent-orders {
+      background: white;
+      border-radius: 24px;
+      padding: 20px;
+      border: 1px solid #e6edf5;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    th {
+      text-align: left;
+      padding: 14px 8px 8px;
+      color: #5a748b;
+      font-size: 0.8rem;
+      border-bottom: 1px solid #dde5ed;
+    }
+
+    td {
+      padding: 12px 8px;
+      border-bottom: 1px solid #f0f4fa;
+    }
+
+    .status-completed {
+      background: #dcfce7;
+      color: #15803d;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    /* ----- PACKAGE SELECTION MODAL (beautiful grid) ----- */
+    .package-grid-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 36px;
+      padding: 32px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+      z-index: 400;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .package-grid-modal.show {
+      display: block;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .modal-header h3 {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      color: #5a748b;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .close-modal:hover {
+      background: #f1f5f9;
+    }
+
+    .packages-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .package-grid-item {
+      background: #f8fafd;
+      border: 2px solid #e2e8f0;
+      border-radius: 60px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+
+    .package-grid-item:hover {
+      transform: translateY(-2px);
+      border-color: inherit;
+    }
+
+    .package-grid-item.selected {
+      border-color: inherit;
+      background: #fef3c7;
+    }
+
+    /* ----- RECIPIENT MODAL (after package selection) ----- */
+    .recipient-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 36px;
+      padding: 32px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+      z-index: 500;
+      width: 90%;
+      max-width: 420px;
+      border: 2px solid;
+    }
+
+    .recipient-modal.show {
+      display: block;
+    }
+
+    .recipient-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .recipient-header h3 {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .bundle-summary {
+      background: #f8fafd;
+      border-radius: 24px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .bundle-summary .network {
+      font-size: 1.1rem;
+      color: #4f6f8f;
+    }
+
+    .bundle-summary .size {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 8px 0;
+    }
+
+    .bundle-summary .price {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .bundle-summary .validity {
+      color: #4f6f8f;
+      margin-top: 8px;
+    }
+
+    .recipient-input {
+      margin: 24px 0;
+    }
+
+    .recipient-input label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .recipient-input input {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 60px;
+      font-size: 1rem;
+    }
+
+    .recipient-input input:focus {
+      outline: none;
+      border-color: inherit;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    /* CART PAGE */
+    .cart-page {
+      background: white;
+      border-radius: 28px;
+      padding: 28px;
+      max-width: 600px;
+      margin: 0 auto;
+      border: 1px solid #e2e8f0;
+      position: relative;
+    }
+
+    .cart-close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      color: #5a748b;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .cart-close-btn:hover {
+      background: #f1f5f9;
+    }
+
+    .cart-page h2 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    .cart-page .subhead {
+      color: #4f6f8f;
+      margin-bottom: 28px;
+    }
+
+    .cart-item {
+      background: #f8fafd;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+
+    .cart-item-details .network {
+      font-weight: 600;
+      color: #0b2b3c;
+    }
+
+    .cart-item-details .bundle {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 4px 0;
+    }
+
+    .cart-item-details .recipient {
+      color: #4f6f8f;
+      font-size: 0.9rem;
+    }
+
+    .cart-item-details .validity {
+      color: #4f6f8f;
+      font-size: 0.8rem;
+      margin-top: 4px;
+    }
+
+    .cart-item-price {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0b2b3c;
+    }
+
+    .remove-item-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .clear-all {
+      text-align: right;
+      margin: 8px 0 24px;
+    }
+
+    .clear-all button {
+      background: none;
+      border: none;
+      color: #dc2626;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .order-summary {
+      background: #f8fafd;
+      border-radius: 20px;
+      padding: 22px;
+      margin: 24px 0;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      font-size: 1.1rem;
+    }
+
+    .summary-row.total {
+      font-weight: 700;
+      font-size: 1.3rem;
+      border-top: 2px solid #dde5ed;
+      padding-top: 14px;
+      margin-top: 8px;
+    }
+
+    .payment-method {
+      margin: 24px 0;
+    }
+
+    .payment-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .payment-option input[type="radio"] {
+      width: 20px;
+      height: 20px;
+      accent-color: #f5a623;
+    }
+
+    .process-btn {
+      width: 100%;
+      background: #0b2b3c;
+      color: white;
+      border: none;
+      border-radius: 60px;
+      padding: 18px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+
+    /* fixed bottom buttons */
+    .fixed-bottom-left {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 100;
+    }
+
+    .fixed-bottom-right {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 100;
+    }
+
+    .whatsapp-btn, .cart-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 60px;
+      background: #25D366;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+      cursor: pointer;
+      border: none;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .whatsapp-btn:hover, .cart-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .cart-btn {
+      background: #0b2b3c;
+    }
+
+    .cart-count {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #f5a623;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    footer {
+      text-align: center;
+      color: #6f8da3;
+      padding: 28px 0 10px;
+      font-size: 0.85rem;
+      border-top: 1px solid #e2eaf2;
+      margin-top: 32px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-desktop { display: none; }
+      .menu-toggle { display: flex; }
+      .main-layout { flex-direction: column; }
+      .content-area { padding: 20px 18px; }
+      .payment-method-selector { flex-direction: column; }
+      .packages-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- top bar -->
+  <div class="top-bar">
+    <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+    <div class="logo-area">
+      <h1>Donmac Data Hub</h1>
+    </div>
+    <div class="user-profile">
+      <div class="agent-badge"><i class="fas fa-id-card"></i> Agent</div>
+      <div class="balance-pill"><i class="fas fa-wallet"></i> GH₵ 0.00</div>
+    </div>
+  </div>
+
+  <!-- mobile drawer -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="drawer-header"><h2>Menu</h2><button class="close-drawer" id="closeDrawer">&times;</button></div>
+    <div class="drawer-item active" data-section="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
+    <div class="drawer-item" data-section="orders"><i class="fas fa-truck"></i> Orders</div>
+    <div class="drawer-item" data-section="topup"><i class="fas fa-arrow-up"></i> Top Ups</div>
+    <div class="drawer-item" data-section="transactions"><i class="fas fa-clock-rotate-left"></i> Transactions</div>
+    <div class="drawer-item" data-section="logout"><i class="fas fa-sign-out-alt"></i> Logout</div>
+  </div>
+  <div class="overlay" id="overlay"></div>
+
+  <!-- main layout -->
+  <div class="main-layout">
+    <!-- desktop sidebar -->
+    <div class="sidebar-desktop">
+      <div class="nav-item active" data-section="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
+      <div class="nav-item" data-section="orders"><i class="fas fa-truck"></i> Orders</div>
+      <div class="nav-item" data-section="topup"><i class="fas fa-arrow-up"></i> Top Ups</div>
+      <div class="nav-item" data-section="transactions"><i class="fas fa-clock-rotate-left"></i> Transactions</div>
+      <div class="nav-item" data-section="logout"><i class="fas fa-sign-out-alt"></i> Logout</div>
+    </div>
+
+    <!-- content area -->
+    <div class="content-area" id="contentArea">
+      <!-- DASHBOARD -->
+      <div id="dashboardPage" class="page-section active">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-title"><i class="fas fa-wallet"></i> Wallet</div><div class="stat-number">GH₵ 0.00</div></div>
+          <div class="stat-card"><div class="stat-title"><i class="fas fa-chart-bar"></i> Purchased</div><div class="stat-number">0 GB</div></div>
+          <div class="stat-card"><div class="stat-title"><i class="fas fa-money-bill"></i> Spent</div><div class="stat-number">GH₵ 0.00</div></div>
+          <div class="stat-card"><div class="stat-title"><i class="fas fa-credit-card"></i> Payments</div><div class="stat-number">GH₵ 0.00</div></div>
+        </div>
+
+        <div class="wallet-row">
+          <div class="wallet-box">
+            <div class="wallet-left">
+              <i class="fas fa-circle-dollar" style="font-size:2rem;"></i>
+              <div><span style="opacity:0.9;">Wallet</span><div class="amount">GH₵ 0.00</div></div>
+            </div>
+            <div class="action-btn" id="quickTopupBtn"><i class="fas fa-plus-circle"></i> Top up</div>
+          </div>
+        </div>
+
+        <div class="bundles-section">
+          <h3><i class="fas fa-tag"></i> Data Bundles</h3>
+          <div class="subhead">Select your network and choose a data package</div>
+          <div class="bundle-vertical-list">
+            <div class="bundle-row-item" data-network="mtn" data-networkname="MTN">
+              <div class="bundle-info"><h4>MTN</h4><p>14 data packages</p></div>
+              <div class="bundle-tag" style="background:#fef3c7; color:#b6560c;">Select Bundle →</div>
+            </div>
+            <div class="bundle-row-item" data-network="telecel" data-networkname="TELECEL">
+              <div class="bundle-info"><h4>TELECEL</h4><p>9 data packages</p></div>
+              <div class="bundle-tag" style="background:#fee2e2; color:#b91c1c;">Select Bundle →</div>
+            </div>
+            <div class="bundle-row-item" data-network="at" data-networkname="AIRTELTIGO BIG TIME">
+              <div class="bundle-info"><h4>AIRTELTIGO BIG TIME</h4><p>14 data packages</p></div>
+              <div class="bundle-tag" style="background:#dbeafe; color:#1e40af;">Select Bundle →</div>
+            </div>
+            <div class="bundle-row-item" data-network="premium" data-networkname="AIRTELTIGO PREMIUM">
+              <div class="bundle-info"><h4>AIRTELTIGO PREMIUM</h4><p>14 data packages</p></div>
+              <div class="bundle-tag" style="background:#ede9fe; color:#6b21a8;">Select Bundle →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDERS page -->
+      <div id="ordersPage" class="page-section">
+        <div class="filter-bar">
+          <div class="filter-item"><i class="fas fa-calendar"></i><input type="date" value="2026-03-07"></div>
+          <div class="filter-item"><i class="fas fa-filter"></i><select><option>All Status</option><option>Processing</option><option>Completed</option></select></div>
+          <div class="filter-item"><i class="fas fa-globe"></i><select><option>All Networks</option><option>MTN</option><option>Telecel</option><option>AT</option></select></div>
+          <div class="filter-item"><i class="fas fa-search"></i><input placeholder="Phone, Order ID"></div>
+        </div>
+        <div class="recent-orders">
+          <h3 style="margin-bottom:12px;"><i class="fas fa-list-check"></i> Orders · 17 total</h3>
+          <table>
+            <thead><tr><th>ID</th><th>NETWORK</th><th>BUNDLE</th><th>RECIPIENT</th><th>STATUS</th><th>AMOUNT</th><th>DATE/TIME</th></tr></thead>
+            <tbody>
+              <tr><td>#27126</td><td>MTN</td><td>2GB</td><td>0537642878</td><td><span class="status-completed">Completed</span></td><td>GH₵ 7.90</td><td>2026-03-07 09:23</td></tr>
+              <tr><td>#27120</td><td>MTN</td><td>1GB</td><td>0592404896</td><td><span class="status-completed">Completed</span></td><td>GH₵ 3.90</td><td>2026-03-07 10:45</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TOP UPS page - beautifully styled -->
+      <div id="topupPage" class="page-section">
+        <div class="topup-stats">
+          <div class="topup-stat-card"><div class="label">TOTAL AMOUNT</div><div class="value">₵150.00</div></div>
+          <div class="topup-stat-card"><div class="label">PROCESSING</div><div class="value">1</div></div>
+          <div class="topup-stat-card"><div class="label">COMPLETED</div><div class="value">+ ₵120.00</div></div>
+          <div class="topup-stat-card"><div class="label">PENDING</div><div class="value">0</div></div>
+        </div>
+
+        <div class="filter-row">
+          <div class="filter-date"><i class="fas fa-calendar-alt"></i><input type="date" value="2026-03-07"></div>
+          <span><i class="fas fa-filter"></i> FILTER BY DATE</span>
+        </div>
+
+        <div class="wallet-topup-section">
+          <h3><i class="fas fa-wallet" style="color:#f5a623;"></i> Wallet Top-up</h3>
+          
+          <div class="form-group">
+            <label><i class="fas fa-money-bill-wave"></i> Amount (GH₵)</label>
+            <input class="form-control" type="number" id="topupAmount" placeholder="Enter amount" min="1" step="0.01">
+          </div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-phone-alt"></i> Mobile Money Number</label>
+            <input class="form-control" type="tel" id="topupPhone" placeholder="e.g., 0241234567">
+          </div>
+          
+          <div class="payment-method-selector">
+            <div class="payment-method-card" id="selectPaystack" onclick="selectPaymentMethod('paystack')">
+              <i class="fas fa-credit-card"></i> Paystack
+            </div>
+            <div class="payment-method-card" id="selectMobileMoney" onclick="selectPaymentMethod('mobilemoney')">
+              <i class="fas fa-mobile-alt"></i> Mobile Money
+            </div>
+          </div>
+
+          <div id="mobileMoneyDetails" style="display: none;">
+            <div class="mobile-money-details">
+              <h4 style="margin-bottom:20px;"><i class="fas fa-info-circle"></i> Payment Details</h4>
+              
+              <div class="detail-row">
+                <span><i class="fas fa-phone"></i> Mobile Money Number:</span>
+                <span><strong>0549358359</strong> <button class="copy-btn" onclick="copyToClipboard('0549358359')"><i class="far fa-copy"></i> Copy</button></span>
+              </div>
+              
+              <div class="detail-row">
+                <span><i class="fas fa-user"></i> Account Name:</span>
+                <span><strong>Osei Michael</strong></span>
+              </div>
+              
+              <div class="screenshot-upload">
+                <label><i class="fas fa-camera"></i> Upload Payment Screenshot:</label>
+                <input type="file" id="screenshotUpload" accept="image/*">
+              </div>
+              
+              <div class="whatsapp-note">
+                <i class="fab fa-whatsapp fa-2x"></i>
+                <div>After payment, click the button below to send screenshot to our WhatsApp (+233549358359)</div>
+              </div>
+              
+              <button class="btn" onclick="submitMobileMoneyPayment()" style="width:100%;">
+                <i class="fab fa-whatsapp"></i> Submit Payment via WhatsApp
+              </button>
+            </div>
+          </div>
+
+          <div id="paystackDetails" style="display: none;">
+            <div class="paystack-info">
+              <h4 style="margin-bottom:20px;"><i class="fas fa-lock"></i> Paystack Payment</h4>
+              
+              <div class="fee-note">
+                <i class="fas fa-info-circle"></i> A 2% transaction fee will be applied
+              </div>
+              
+              <div class="form-group">
+                <label><i class="fas fa-envelope"></i> Email Address (for receipt)</label>
+                <input class="form-control" type="email" id="paystackEmail" placeholder="your@email.com">
+              </div>
+              
+              <button class="btn" onclick="processPaystackPayment()" style="width:100%;">
+                <i class="fas fa-credit-card"></i> Pay with Paystack
+              </button>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-outline" onclick="cancelTopup()"><i class="fas fa-times"></i> Cancel</button>
+          </div>
+        </div>
+
+        <div class="recent-orders">
+          <h3 style="margin-bottom:12px;"><i class="fas fa-history"></i> Transaction History</h3>
+          <table>
+            <thead><tr><th>ID</th><th>TYPE</th><th>DESCRIPTION</th><th>STATUS</th><th>AMOUNT</th><th>DATE</th></tr></thead>
+            <tbody>
+              <tr><td>#29757</td><td>Top-up</td><td>Wallet top-up via MTN MoMo</td><td><span class="status-completed">Completed</span></td><td>+₵50.00</td><td>Mar 07, 2026 10:23</td></tr>
+              <tr><td>#29497</td><td>Top-up</td><td>Wallet top-up via Telecel</td><td><span class="status-completed">Completed</span></td><td>+₵30.00</td><td>Mar 07, 2026 09:15</td></tr>
+              <tr><td>#29292</td><td>Top-up</td><td>Wallet top-up via AT</td><td><span class="status-completed">Completed</span></td><td>+₵20.00</td><td>Mar 07, 2026 08:44</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TRANSACTIONS page -->
+      <div id="transactionsPage" class="page-section">
+        <div class="transactions-stats">
+          <div class="transactions-stat-card"><div class="label">TOTAL TRANSACTIONS</div><div class="value">18</div></div>
+          <div class="transactions-stat-card"><div class="label">TOTAL CREDITS</div><div class="value">₵150.00</div></div>
+          <div class="transactions-stat-card"><div class="label">TOTAL DEBITS</div><div class="value">₵0.00</div></div>
+          <div class="transactions-stat-card"><div class="label">NET AMOUNT</div><div class="value">₵150.00</div></div>
+        </div>
+
+        <div class="filter-grid">
+          <h3><i class="fas fa-filter"></i> Filter Transactions</h3>
+          <div class="filter-row-grid">
+            <div class="filter-field"><label>Date From</label><input type="date" value="2026-03-07"></div>
+            <div class="filter-field"><label>Date To</label><input type="date" value="2026-03-07"></div>
+            <div class="filter-field"><label>Type</label><select><option>All Types</option><option>Top-up</option><option>Payment</option></select></div>
+            <div class="filter-field"><label>Status</label><select><option>All Status</option><option>Completed</option><option>Pending</option></select></div>
+          </div>
+          <div class="filter-field" style="margin-bottom:16px;"><label>Q Search</label><input type="text" placeholder="Description, ID"></div>
+          <div class="filter-actions"><button class="clear-btn">Clear</button><button>Apply</button></div>
+        </div>
+
+        <div class="recent-orders">
+          <h3 style="margin-bottom:12px;">Transactions · 18 total transactions</h3>
+          <table>
+            <thead><tr><th>TRANSACTION ID</th><th>TYPE</th><th>DESCRIPTION</th><th>STATUS</th><th>AMOUNT</th><th>BALANCE</th><th>DATE</th></tr></thead>
+            <tbody>
+              <tr><td>#29757</td><td>—</td><td>Order Payment of GHC15.9 for order #34634</td><td><span class="status-completed">Completed</span></td><td>-₵15.90</td><td>₵66.61</td><td>Mar 07, 2026 17:02</td></tr>
+              <tr><td>#29497</td><td>—</td><td>Order Payment of GHC7.8 for order #34228, 34229</td><td><span class="status-completed">Completed</span></td><td>-₵7.80</td><td>₵82.51</td><td>Mar 07, 2026 14:03</td></tr>
+              <tr><td>#29292</td><td>—</td><td>Order Payment of GHC3.9 for order #34031</td><td><span class="status-completed">Completed</span></td><td>-₵3.90</td><td>₵90.31</td><td>Mar 07, 2026 11:51</td></tr>
+              <tr><td>#29280</td><td>—</td><td>Order Payment of GHC3.9 for order #34019</td><td><span class="status-completed">Completed</span></td><td>-₵3.90</td><td>₵94.21</td><td>Mar 07, 2026 11:46</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CART PAGE -->
+      <div id="cartPage" class="page-section">
+        <div class="cart-page">
+          <button class="cart-close-btn" onclick="showPage('dashboard')">&times;</button>
+          <h2>Shopping Cart</h2>
+          <div class="subhead">Review and process your orders</div>
+          <div id="cartItemsContainer"></div>
+          <div class="clear-all"><button id="clearAllCart">Clear All</button></div>
+          <div class="order-summary" id="orderSummary">
+            <div class="summary-row"><span>Items</span><span id="summaryItems">0</span></div>
+            <div class="summary-row"><span>Subtotal</span><span id="summarySubtotal">₵0.00</span></div>
+            <div class="summary-row total"><span>Total</span><span id="summaryTotal">₵0.00</span></div>
+          </div>
+          <div class="payment-method">
+            <div class="payment-option"><input type="radio" name="payment" id="payWallet" checked> <label for="payWallet">Pay with Wallet</label></div>
+            <div class="payment-option"><input type="radio" name="payment" id="payPaystack"> <label for="payPaystack">Pay with Paystack</label></div>
+          </div>
+          <button class="process-btn" id="processOrders">Process Orders</button>
+        </div>
+      </div>
+
+      <footer>Donmac Data Hub · Accra</footer>
+    </div>
+  </div>
+
+  <!-- fixed bottom buttons -->
+  <div class="fixed-bottom-left"><div class="whatsapp-btn" id="whatsappBtn"><i class="fab fa-whatsapp"></i></div></div>
+  <div class="fixed-bottom-right">
+    <div class="cart-btn" id="cartBtn">
+      <i class="fas fa-shopping-cart"></i>
+      <span class="cart-count" id="cartCount">0</span>
+    </div>
+  </div>
+
+  <!-- PACKAGE GRID MODAL (for selecting GB) -->
+  <div class="package-grid-modal" id="packageGridModal">
+    <div class="modal-header">
+      <h3 id="gridNetworkName">MTN</h3>
+      <button class="close-modal" id="closeGridModal">&times;</button>
+    </div>
+    <div class="packages-grid" id="packagesGridContainer"></div>
+  </div>
+
+  <!-- RECIPIENT MODAL (for entering phone number) -->
+  <div class="recipient-modal" id="recipientModal">
+    <div class="recipient-header">
+      <h3 id="recipientNetworkName">MTN</h3>
+      <button class="close-modal" id="closeRecipientModal">&times;</button>
+    </div>
+    
+    <div class="bundle-summary" id="bundleSummary">
+      <div class="network" id="summaryNetwork">MTN</div>
+      <div class="size" id="summarySize">2GB</div>
+      <div class="price" id="summaryPrice">GH₵10.00</div>
+      <div class="validity">Validity: 90 days</div>
+    </div>
+
+    <div class="recipient-input">
+      <label><i class="fas fa-phone-alt"></i> Recipient Phone Number</label>
+      <input type="tel" id="recipientPhoneInput" placeholder="e.g., 0241234567">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="cancelRecipientBtn">Cancel</button>
+      <button class="btn" id="confirmRecipientBtn">Add to Cart</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Global variables
+  let currentPaymentMethod = null;
+  let cartItems = [];
+  let selectedNetwork = null;
+  let selectedPackage = null;
+  
+  // Mobile drawer functions
+  const menuToggle = document.getElementById('menuToggle');
+  const mobileDrawer = document.getElementById('mobileDrawer');
+  const overlay = document.getElementById('overlay');
+  const closeDrawer = document.getElementById('closeDrawer');
+  
+  function openDrawer() { mobileDrawer.classList.add('open'); overlay.classList.add('show'); }
+  function closeDrawerFunc() { mobileDrawer.classList.remove('open'); overlay.classList.remove('show'); }
+  
+  if (menuToggle) menuToggle.addEventListener('click', openDrawer);
+  if (closeDrawer) closeDrawer.addEventListener('click', closeDrawerFunc);
+  if (overlay) overlay.addEventListener('click', closeDrawerFunc);
+
+  // Page switching
+  const pages = {
+    dashboard: document.getElementById('dashboardPage'),
+    orders: document.getElementById('ordersPage'),
+    topup: document.getElementById('topupPage'),
+    transactions: document.getElementById('transactionsPage'),
+    cart: document.getElementById('cartPage')
+  };
+  
+  const desktopNav = document.querySelectorAll('.sidebar-desktop .nav-item');
+  const drawerItems = document.querySelectorAll('.drawer-item');
+
+  window.showPage = function(pageId) {
+    Object.values(pages).forEach(p => p.classList.remove('active'));
+    if (pages[pageId]) pages[pageId].classList.add('active');
+    desktopNav.forEach(n => n.classList.toggle('active', n.getAttribute('data-section') === pageId));
+    drawerItems.forEach(n => n.classList.toggle('active', n.getAttribute('data-section') === pageId));
+    if (pageId === 'cart') updateCartDisplay();
+    closeDrawerFunc();
+  };
+
+  desktopNav.forEach(n => n.addEventListener('click', () => showPage(n.getAttribute('data-section'))));
+  drawerItems.forEach(n => n.addEventListener('click', () => showPage(n.getAttribute('data-section'))));
+  document.getElementById('quickTopupBtn').addEventListener('click', () => showPage('topup'));
+
+  // Package data
+  const packages = {
+    mtn: [
+      { gb: 1, price: 4.60 }, { gb: 2, price: 9.60 }, { gb: 3, price: 13.90 }, { gb: 4, price: 18.50 },
+      { gb: 5, price: 23.50 }, { gb: 6, price: 28 }, { gb: 8, price: 37 }, { gb: 10, price: 43.50 },
+      { gb: 15, price: 64 }, { gb: 20, price: 84 }, { gb: 25, price: 105 }, { gb: 30, price: 126 },
+      { gb: 40, price: 164 }, { gb: 50, price: 205 }
+    ],
+    telecel: [
+      { gb: 2, price: 9.40 }, { gb: 3, price: 14.00 }, { gb: 5, price: 23.00 }, { gb: 10, price: 42 },
+      { gb: 15, price: 62 }, { gb: 20, price: 82 }, { gb: 30, price: 123 }, { gb: 40, price: 167 },
+      { gb: 50, price: 202 }
+    ],
+    at: [
+      { gb: 15, price: 57 }, { gb: 20, price: 67 }, { gb: 30, price: 76 }, { gb: 40, price: 90 },
+      { gb: 50, price: 105 }, { gb: 60, price: 117 }, { gb: 70, price: 140 }, { gb: 80, price: 160 },
+      { gb: 90, price: 170 }, { gb: 100, price: 190 }, { gb: 130, price: 230 }, { gb: 140, price: 253 },
+      { gb: 150, price: 278 }, { gb: 200, price: 390 }
+    ],
+    premium: [
+      { gb: 1, price: 4.50 }, { gb: 2, price: 9.20 }, { gb: 3, price: 13.70 }, { gb: 4, price: 18.50 },
+      { gb: 5, price: 23 }, { gb: 6, price: 27.50 }, { gb: 7, price: 32.00 }, { gb: 8, price: 36.50 },
+      { gb: 10, price: 41.20 }, { gb: 12, price: 50.00 }, { gb: 15, price: 63.00 }, { gb: 20, price: 82.00 },
+      { gb: 25, price: 105 }, { gb: 30, price: 129 }
+    ]
+  };
+
+  const networkColors = {
+    mtn: { border: '#f5a623', name: 'MTN' },
+    telecel: { border: '#dc2626', name: 'TELECEL' },
+    at: { border: '#2563eb', name: 'AIRTELTIGO BIG TIME' },
+    premium: { border: '#8b5cf6', name: 'AIRTELTIGO PREMIUM' }
+  };
+
+  // Modal elements
+  const gridModal = document.getElementById('packageGridModal');
+  const recipientModal = document.getElementById('recipientModal');
+  const closeGrid = document.getElementById('closeGridModal');
+  const closeRecipient = document.getElementById('closeRecipientModal');
+  const cancelRecipient = document.getElementById('cancelRecipientBtn');
+  const confirmRecipient = document.getElementById('confirmRecipientBtn');
+  const packagesGrid = document.getElementById('packagesGridContainer');
+  const gridNetworkName = document.getElementById('gridNetworkName');
+  
+  // Recipient modal elements
+  const summaryNetwork = document.getElementById('summaryNetwork');
+  const summarySize = document.getElementById('summarySize');
+  const summaryPrice = document.getElementById('summaryPrice');
+  const recipientInput = document.getElementById('recipientPhoneInput');
+
+  // Show package grid when bundle row is clicked
+  document.querySelectorAll('.bundle-row-item').forEach(row => {
+    row.addEventListener('click', (e) => {
+      const network = row.getAttribute('data-network');
+      const networkName = row.getAttribute('data-networkname');
+      
+      selectedNetwork = network;
+      gridNetworkName.innerText = networkName;
+      gridModal.style.borderColor = networkColors[network].border;
+      
+      // Generate package grid
+      let html = '';
+      packages[network].forEach(pkg => {
+        html += `
+          <div class="package-grid-item" style="border-color: ${networkColors[network].border};" 
+               onclick="selectPackage(${pkg.gb}, ${pkg.price}, '${networkName}', '${network}')">
+            ${pkg.gb}GB - GH₵${pkg.price.toFixed(2)}
+          </div>
+        `;
+      });
+      packagesGrid.innerHTML = html;
+      
+      gridModal.classList.add('show');
+    });
+  });
+
+  // Select package and show recipient modal
+  window.selectPackage = function(gb, price, networkName, networkKey) {
+    selectedPackage = { gb, price, networkName, networkKey };
+    
+    // Update recipient modal
+    summaryNetwork.innerText = networkName;
+    summarySize.innerText = gb + 'GB';
+    summaryPrice.innerText = 'GH₵' + price.toFixed(2);
+    recipientModal.style.borderColor = networkColors[networkKey].border;
+    
+    // Close grid modal and open recipient modal
+    gridModal.classList.remove('show');
+    recipientModal.classList.add('show');
+  };
+
+  // Close modals
+  closeGrid.addEventListener('click', () => gridModal.classList.remove('show'));
+  closeRecipient.addEventListener('click', () => recipientModal.classList.remove('show'));
+  cancelRecipient.addEventListener('click', () => {
+    recipientModal.classList.remove('show');
+    recipientInput.value = '';
+  });
+
+  // Confirm add to cart
+  confirmRecipient.addEventListener('click', () => {
+    if (!selectedPackage) return;
+    
+    const phone = recipientInput.value.trim();
+    if (!phone) {
+      alert('Please enter recipient phone number');
+      return;
+    }
+    
+    cartItems.push({
+      network: selectedPackage.networkName,
+      gb: selectedPackage.gb,
+      price: selectedPackage.price,
+      phone: phone,
+      validity: '90 days',
+      date: new Date().toLocaleString()
+    });
+    
+    updateCartDisplay();
+    recipientModal.classList.remove('show');
+    recipientInput.value = '';
+    alert('Added to cart!');
+  });
+
+  // Payment method selection
+  window.selectPaymentMethod = function(method) {
+    currentPaymentMethod = method;
+    
+    document.getElementById('selectPaystack').classList.remove('selected');
+    document.getElementById('selectMobileMoney').classList.remove('selected');
+    
+    if (method === 'paystack') {
+      document.getElementById('selectPaystack').classList.add('selected');
+      document.getElementById('paystackDetails').style.display = 'block';
+      document.getElementById('mobileMoneyDetails').style.display = 'none';
+    } else {
+      document.getElementById('selectMobileMoney').classList.add('selected');
+      document.getElementById('mobileMoneyDetails').style.display = 'block';
+      document.getElementById('paystackDetails').style.display = 'none';
+    }
+  };
+
+  // Copy to clipboard - fixed
+  window.copyToClipboard = function(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Copied to clipboard!');
+    }).catch(err => {
+      // Fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      alert('Copied to clipboard!');
+    });
+  };
+
+  window.submitMobileMoneyPayment = function() {
+    const amount = document.getElementById('topupAmount').value;
+    const phone = document.getElementById('topupPhone').value;
+    const screenshot = document.getElementById('screenshotUpload').files[0];
+    
+    if (!amount || !phone) {
+      alert('Please enter amount and phone number');
+      return;
+    }
+    
+    if (!screenshot) {
+      alert('Please upload payment screenshot');
+      return;
+    }
+    
+    const message = `New Mobile Money Payment:\nAmount: GH₵${amount}\nFrom: ${phone}\nScreenshot attached`;
+    alert(`WhatsApp message would be sent:\n\n${message}\n\nTo: +233549358359`);
+    
+    addTransaction('Top-up', `Wallet top-up via Mobile Money`, `+₵${amount}`, 'Completed');
+  };
+
+  window.processPaystackPayment = function() {
+    const amount = document.getElementById('topupAmount').value;
+    const email = document.getElementById('paystackEmail').value;
+    const phone = document.getElementById('topupPhone').value;
+    
+    if (!amount || !email || !phone) {
+      alert('Please enter amount, email and phone number');
+      return;
+    }
+    
+    const fee = amount * 0.02;
+    const total = parseFloat(amount) + fee;
+    
+    const handler = PaystackPop.setup({
+      key: 'pk_test_xxxxxxxxxxxxxxxxxxxxx',
+      email: email,
+      amount: total * 100,
+      currency: 'GHS',
+      metadata: {
+        custom_fields: [
+          {
+            display_name: "Phone Number",
+            variable_name: "phone_number",
+            value: phone
+          }
+        ]
+      },
+      callback: function(response) {
+        alert(`Payment successful! Reference: ${response.reference}`);
+        console.log(`Admin notification: Payment of GH₵${total} from ${email}`);
+        addTransaction('Top-up', `Wallet top-up via Paystack (inc. 2% fee)`, `+₵${amount}`, 'Completed');
+        updateWalletBalance(amount);
+      },
+      onClose: function() {
+        alert('Payment cancelled');
+      }
+    });
+    
+    handler.openIframe();
+  };
+
+  function addTransaction(type, description, amount, status) {
+    console.log('Transaction added:', { type, description, amount, status });
+  }
+
+  function updateWalletBalance(amount) {
+    const balanceElement = document.querySelector('.balance-pill');
+    const currentText = balanceElement.innerText;
+    const currentBalance = parseFloat(currentText.replace('GH₵ ', '')) || 0;
+    const newBalance = currentBalance + parseFloat(amount);
+    balanceElement.innerHTML = `<i class="fas fa-wallet"></i> GH₵ ${newBalance.toFixed(2)}`;
+    document.querySelector('#dashboardPage .stat-card:first-child .stat-number').innerText = `GH₵ ${newBalance.toFixed(2)}`;
+  }
+
+  window.cancelTopup = function() {
+    document.getElementById('topupAmount').value = '';
+    document.getElementById('topupPhone').value = '';
+    document.getElementById('paystackEmail').value = '';
+    document.getElementById('screenshotUpload').value = '';
+    document.getElementById('paystackDetails').style.display = 'none';
+    document.getElementById('mobileMoneyDetails').style.display = 'none';
+    document.getElementById('selectPaystack').classList.remove('selected');
+    document.getElementById('selectMobileMoney').classList.remove('selected');
+    showPage('dashboard');
+  };
+
+  // Cart functions
+  const cartCountSpan = document.getElementById('cartCount');
+  const cartItemsContainer = document.getElementById('cartItemsContainer');
+  const summaryItems = document.getElementById('summaryItems');
+  const summarySubtotal = document.getElementById('summarySubtotal');
+  const summaryTotal = document.getElementById('summaryTotal');
+
+  function updateCartDisplay() {
+    cartCountSpan.innerText = cartItems.length;
+    
+    if (cartItems.length === 0) {
+      cartItemsContainer.innerHTML = '<p style="text-align:center; color:#4f6f8f; padding:20px;">Your cart is empty</p>';
+      summaryItems.innerText = '0';
+      summarySubtotal.innerText = '₵0.00';
+      summaryTotal.innerText = '₵0.00';
+      return;
+    }
+
+    let html = '';
+    let subtotal = 0;
+    cartItems.forEach((item, index) => {
+      subtotal += parseFloat(item.price);
+      html += `
+        <div class="cart-item" data-index="${index}">
+          <button class="remove-item-btn" onclick="removeCartItem(${index})">×</button>
+          <div class="cart-item-details">
+            <div class="network">${item.network}</div>
+            <div class="bundle">${item.gb}GB</div>
+            <div class="recipient">Recipient: ${item.phone}</div>
+            <div class="validity">Validity: ${item.validity}</div>
+          </div>
+          <div class="cart-item-price">GH₵${parseFloat(item.price).toFixed(2)}</div>
+        </div>
+      `;
+    });
+    cartItemsContainer.innerHTML = html;
+    summaryItems.innerText = cartItems.length;
+    summarySubtotal.innerText = `₵${subtotal.toFixed(2)}`;
+    summaryTotal.innerText = `₵${subtotal.toFixed(2)}`;
+  }
+
+  window.removeCartItem = (index) => {
+    cartItems.splice(index, 1);
+    updateCartDisplay();
+  };
+
+  document.getElementById('clearAllCart').addEventListener('click', () => {
+    cartItems = [];
+    updateCartDisplay();
+  });
+
+  document.getElementById('processOrders').addEventListener('click', () => {
+    if (cartItems.length === 0) {
+      alert('Cart is empty');
+      return;
+    }
+    
+    const paymentMethod = document.querySelector('input[name="payment"]:checked').nextElementSibling.innerText;
+    
+    if (paymentMethod === 'Pay with Wallet') {
+      const walletBalance = parseFloat(document.querySelector('.balance-pill').innerText.replace('GH₵ ', ''));
+      const total = parseFloat(summaryTotal.innerText.replace('₵', ''));
+      
+      if (walletBalance < total) {
+        alert('Insufficient wallet balance. Please top up or use Paystack.');
+        return;
+      }
+      
+      alert(`Processing ${cartItems.length} order(s) with Wallet`);
+      
+      const newBalance = walletBalance - total;
+      document.querySelector('.balance-pill').innerHTML = `<i class="fas fa-wallet"></i> GH₵ ${newBalance.toFixed(2)}`;
+      document.querySelector('#dashboardPage .stat-card:first-child .stat-number').innerText = `GH₵ ${newBalance.toFixed(2)}`;
+      
+      cartItems = [];
+      updateCartDisplay();
+      showPage('dashboard');
+      
+    } else {
+      const email = prompt('Enter your email for receipt:', 'customer@example.com');
+      if (!email) return;
+      
+      const total = parseFloat(summaryTotal.innerText.replace('₵', ''));
+      const fee = total * 0.02;
+      const grandTotal = total + fee;
+      
+      alert(`Paystack payment would process:\nSubtotal: ₵${total.toFixed(2)}\n2% Fee: ₵${fee.toFixed(2)}\nTotal: ₵${grandTotal.toFixed(2)}\n\nEmail receipt to: ${email}`);
+      
+      cartItems = [];
+      updateCartDisplay();
+      showPage('dashboard');
+    }
+  });
+
+  document.getElementById('cartBtn').addEventListener('click', () => {
+    showPage('cart');
+  });
+
+  document.getElementById('whatsappBtn').addEventListener('click', () => {
+    window.open('https://wa.me/233549358359', '_blank');
+  });
+
+  // Initialize
+  updateCartDisplay();
+</script>
+</body>
+</html>
