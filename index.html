@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <!-- Paystack inline script -->
   <script src="https://js.paystack.co/v1/inline.js"></script>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * {
       margin: 0;
@@ -1115,6 +1117,57 @@
       margin-top: 32px;
     }
 
+    .filter-card {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 24px;
+    }
+
+    .filter-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .filter-header h3 {
+      font-size: 1.1rem;
+      color: #0b2b3c;
+    }
+
+    .filter-header p {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .filter-icon {
+      width: 44px;
+      height: 44px;
+      background: #f1f5f9;
+      color: #4f6f8f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      font-size: 1.2rem;
+    }
+
+    .filter-grid-new {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+    }
+
+    .filter-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #64748b;
+    }
+
     @media (max-width: 768px) {
       .sidebar-desktop { display: none; }
       .menu-toggle { display: flex; }
@@ -1208,19 +1261,85 @@
 
       <!-- ORDERS page -->
       <div id="ordersPage" class="page-section">
-        <div class="filter-bar">
-          <div class="filter-item"><i class="fas fa-calendar"></i><input type="date" value="2026-03-07"></div>
-          <div class="filter-item"><i class="fas fa-filter"></i><select><option>All Status</option><option>Processing</option><option>Completed</option></select></div>
-          <div class="filter-item"><i class="fas fa-globe"></i><select><option>All Networks</option><option>MTN</option><option>Telecel</option><option>AT</option></select></div>
-          <div class="filter-item"><i class="fas fa-search"></i><input placeholder="Phone, Order ID"></div>
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <div class="stat-card">
+            <div class="stat-title"><i class="fas fa-truck" style="background:#eef2ff; color:#6366f1; padding:10px; border-radius:12px;"></i> TOTAL ORDERS</div>
+            <div class="stat-number" id="totalOrdersCount">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title"><i class="fas fa-coins" style="background:#fef3c7; color:#d97706; padding:10px; border-radius:12px;"></i> TOTAL AMOUNT</div>
+            <div class="stat-number" id="totalOrdersAmount">₵0.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title"><i class="fas fa-database" style="background:#ecfdf5; color:#10b981; padding:10px; border-radius:12px;"></i> TOTAL CAPACITY</div>
+            <div class="stat-number" id="totalOrdersGB">0 GB</div>
+          </div>
         </div>
+
+        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: -10px;">
+          <div class="stat-card" style="border-left: 5px solid #fbbf24; display: flex; align-items: center; gap: 15px;">
+            <i class="fas fa-clock" style="font-size:1.5rem; color:#fbbf24;"></i>
+            <div><div style="font-size:0.8rem; color:#64748b;">PENDING</div><div class="stat-number" id="pendingOrders" style="font-size:1.4rem;">0</div></div>
+          </div>
+          <div class="stat-card" style="border-left: 5px solid #3b82f6; display: flex; align-items: center; gap: 15px;">
+            <i class="fas fa-spinner" style="font-size:1.5rem; color:#3b82f6;"></i>
+            <div><div style="font-size:0.8rem; color:#64748b;">PROCESSING</div><div class="stat-number" id="processingOrders" style="font-size:1.4rem;">0</div></div>
+          </div>
+          <div class="stat-card" style="border-left: 5px solid #10b981; display: flex; align-items: center; gap: 15px;">
+            <i class="fas fa-check-double" style="font-size:1.5rem; color:#10b981;"></i>
+            <div><div style="font-size:0.8rem; color:#64748b;">COMPLETED</div><div class="stat-number" id="completedOrders" style="font-size:1.4rem;">0</div></div>
+          </div>
+          <div class="stat-card" style="border-left: 5px solid #ef4444; display: flex; align-items: center; gap: 15px;">
+            <i class="fas fa-times-circle" style="font-size:1.5rem; color:#ef4444;"></i>
+            <div><div style="font-size:0.8rem; color:#64748b;">FAILED</div><div class="stat-number" id="failedOrders" style="font-size:1.4rem;">0</div></div>
+          </div>
+        </div>
+
+        <div class="filter-card">
+          <div class="filter-header">
+            <div class="filter-icon" style="background:#eef2ff; color:#6366f1;"><i class="fas fa-filter"></i></div>
+            <div>
+              <h3>Filter Orders</h3>
+              <p>Search and filter your orders</p>
+            </div>
+          </div>
+          <div class="filter-grid-new">
+            <div class="filter-group"><label><i class="fas fa-calendar"></i> Date From</label><input type="date" id="orderDateFrom" class="form-control"></div>
+            <div class="filter-group"><label><i class="fas fa-calendar"></i> Date To</label><input type="date" id="orderDateTo" class="form-control"></div>
+            <div class="filter-group">
+              <label><i class="fas fa-check-circle"></i> Status</label>
+              <select id="orderStatusFilter" class="form-control">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label><i class="fas fa-globe"></i> Network</label>
+              <select id="orderNetworkFilter" class="form-control">
+                <option value="all">All Networks</option>
+                <option value="MTN">MTN</option>
+                <option value="TELECEL">Telecel</option>
+                <option value="AT">AT</option>
+              </select>
+            </div>
+            <div class="filter-group"><label><i class="fas fa-search"></i> Search</label><input type="text" id="orderSearch" class="form-control" placeholder="Phone, Order ID..."></div>
+            <div class="filter-group" style="display: flex; align-items: flex-end;">
+              <button class="btn btn-outline" style="width: 100%; border-radius: 60px;" onclick="resetOrderFilters()">
+                <i class="fas fa-sync-alt"></i> Clear
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="recent-orders">
-          <h3 style="margin-bottom:12px;"><i class="fas fa-list-check"></i> Orders · 17 total</h3>
+          <h3 style="margin-bottom:12px;" id="ordersTableTitle"><i class="fas fa-list-check"></i> Orders · 0 total</h3>
           <table>
             <thead><tr><th>ID</th><th>NETWORK</th><th>BUNDLE</th><th>RECIPIENT</th><th>STATUS</th><th>AMOUNT</th><th>DATE/TIME</th></tr></thead>
-            <tbody>
-              <tr><td>#27126</td><td>MTN</td><td>2GB</td><td>0537642878</td><td><span class="status-completed">Completed</span></td><td>GH₵ 7.90</td><td>2026-03-07 09:23</td></tr>
-              <tr><td>#27120</td><td>MTN</td><td>1GB</td><td>0592404896</td><td><span class="status-completed">Completed</span></td><td>GH₵ 3.90</td><td>2026-03-07 10:45</td></tr>
+            <tbody id="ordersBody">
+              <!-- JS dynamic load -->
             </tbody>
           </table>
         </div>
@@ -1300,10 +1419,6 @@
                 <i class="fas fa-info-circle"></i> A 2% transaction fee will be applied
               </div>
               
-              <div class="form-group">
-                <label><i class="fas fa-envelope"></i> Email Address (for receipt)</label>
-                <input class="form-control" type="email" id="paystackEmail" placeholder="your@email.com">
-              </div>
               
               <button class="btn" onclick="processPaystackPayment()" style="width:100%;">
                 <i class="fas fa-credit-card"></i> Pay with Paystack
@@ -1331,40 +1446,110 @@
 
       <!-- TRANSACTIONS page -->
       <div id="transactionsPage" class="page-section">
-        <div class="transactions-stats">
-          <div class="transactions-stat-card"><div class="label">TOTAL TRANSACTIONS</div><div class="value">18</div></div>
-          <div class="transactions-stat-card"><div class="label">TOTAL CREDITS</div><div class="value">₵150.00</div></div>
-          <div class="transactions-stat-card"><div class="label">TOTAL DEBITS</div><div class="value">₵0.00</div></div>
-          <div class="transactions-stat-card"><div class="label">NET AMOUNT</div><div class="value">₵150.00</div></div>
+        <div class="stats-grid">
+          <div class="stat-card" style="border-left: 5px solid #3b82f6;">
+            <div class="stat-title"><i class="fas fa-list"></i> TOTAL TRANSACTIONS</div>
+            <div class="stat-number" id="totalTransCount">0</div>
+          </div>
+          <div class="stat-card" style="border-left: 5px solid #10b981;">
+            <div class="stat-title"><i class="fas fa-arrow-down"></i> TOTAL CREDITS</div>
+            <div class="stat-number" id="totalCredits">₵0.00</div>
+          </div>
+          <div class="stat-card" style="border-left: 5px solid #ef4444;">
+            <div class="stat-title"><i class="fas fa-arrow-up"></i> TOTAL DEBITS</div>
+            <div class="stat-number" id="totalDebits">₵0.00</div>
+          </div>
+          <div class="stat-card" style="border-left: 5px solid #f5a623;">
+            <div class="stat-title"><i class="fas fa-wallet"></i> NET AMOUNT</div>
+            <div class="stat-number" id="netAmount">₵0.00</div>
+          </div>
         </div>
 
-        <div class="filter-grid">
-          <h3><i class="fas fa-filter"></i> Filter Transactions</h3>
-          <div class="filter-row-grid">
-            <div class="filter-field"><label>Date From</label><input type="date" value="2026-03-07"></div>
-            <div class="filter-field"><label>Date To</label><input type="date" value="2026-03-07"></div>
-            <div class="filter-field"><label>Type</label><select><option>All Types</option><option>Top-up</option><option>Payment</option></select></div>
-            <div class="filter-field"><label>Status</label><select><option>All Status</option><option>Completed</option><option>Pending</option></select></div>
+        <div class="filter-card">
+          <div class="filter-header">
+            <div class="filter-icon"><i class="fas fa-filter"></i></div>
+            <div>
+              <h3>Filter Transactions</h3>
+              <p>Search and filter your transactions</p>
+            </div>
           </div>
-          <div class="filter-field" style="margin-bottom:16px;"><label>Q Search</label><input type="text" placeholder="Description, ID"></div>
-          <div class="filter-actions"><button class="clear-btn">Clear</button><button>Apply</button></div>
+          <div class="filter-grid-new">
+            <div class="filter-group">
+              <label><i class="fas fa-calendar"></i> Date From</label>
+              <input type="date" id="transDateFrom" class="form-control">
+            </div>
+            <div class="filter-group">
+              <label><i class="fas fa-calendar"></i> Date To</label>
+              <input type="date" id="transDateTo" class="form-control">
+            </div>
+            <div class="filter-group">
+              <label><i class="fas fa-tag"></i> Type</label>
+              <select id="transType" class="form-control">
+                <option value="all">All Types</option>
+                <option value="credit">Credit</option>
+                <option value="debit">Debit</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label><i class="fas fa-check-circle"></i> Status</label>
+              <select id="transStatus" class="form-control">
+                <option value="all">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label><i class="fas fa-search"></i> Search</label>
+              <input type="text" id="transSearch" class="form-control" placeholder="Description, ID...">
+            </div>
+            <div class="filter-group" style="display: flex; align-items: flex-end;">
+              <button class="btn btn-outline" style="width: 100%; border-radius: 60px;" onclick="resetTransFilters()">
+                <i class="fas fa-sync-alt"></i> Clear
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="recent-orders">
-          <h3 style="margin-bottom:12px;">Transactions · 18 total transactions</h3>
+          <h3 style="margin-bottom:12px;" id="transTableTitle">Transactions · 0 total</h3>
           <table>
             <thead><tr><th>TRANSACTION ID</th><th>TYPE</th><th>DESCRIPTION</th><th>STATUS</th><th>AMOUNT</th><th>BALANCE</th><th>DATE</th></tr></thead>
-            <tbody>
-              <tr><td>#29757</td><td>—</td><td>Order Payment of GHC15.9 for order #34634</td><td><span class="status-completed">Completed</span></td><td>-₵15.90</td><td>₵66.61</td><td>Mar 07, 2026 17:02</td></tr>
-              <tr><td>#29497</td><td>—</td><td>Order Payment of GHC7.8 for order #34228, 34229</td><td><span class="status-completed">Completed</span></td><td>-₵7.80</td><td>₵82.51</td><td>Mar 07, 2026 14:03</td></tr>
-              <tr><td>#29292</td><td>—</td><td>Order Payment of GHC3.9 for order #34031</td><td><span class="status-completed">Completed</span></td><td>-₵3.90</td><td>₵90.31</td><td>Mar 07, 2026 11:51</td></tr>
-              <tr><td>#29280</td><td>—</td><td>Order Payment of GHC3.9 for order #34019</td><td><span class="status-completed">Completed</span></td><td>-₵3.90</td><td>₵94.21</td><td>Mar 07, 2026 11:46</td></tr>
+            <tbody id="transactionsBody">
+              <!-- JS dynamic load -->
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- CART PAGE -->
+      <!-- ADMIN page -->
+      <div id="adminPage" class="page-section">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-title">TOTAL USERS</div><div class="stat-number" id="adminUserCount">0</div></div>
+          <div class="stat-card"><div class="stat-title">TOTAL BALANCE</div><div class="stat-number" id="adminTotalBalance">₵0.00</div></div>
+          <div class="stat-card"><div class="stat-title">SYSTEM ORDERS</div><div class="stat-number" id="adminOrderCount">0</div></div>
+        </div>
+
+        <div class="recent-orders">
+          <h3 style="margin-bottom:20px;"><i class="fas fa-users-cog"></i> User Management</h3>
+          <div class="filter-bar" style="border-radius: 12px; margin-bottom: 15px;">
+            <input type="text" id="adminUserSearch" placeholder="Search by name, email, agent code..." class="form-control" style="max-width: 400px;" oninput="loadAdminUsers()">
+          </div>
+          <table>
+            <thead><tr><th>AGENT</th><th>NAME/EMAIL</th><th>BALANCE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+            <tbody id="adminUsersBody"></tbody>
+          </table>
+        </div>
+
+        <div class="recent-orders" style="margin-top: 30px;">
+          <h3 style="margin-bottom:20px;"><i class="fas fa-tasks"></i> Order Management</h3>
+          <table>
+            <thead><tr><th>ID</th><th>USER</th><th>BUNDLE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+            <tbody id="adminOrdersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div id="cartPage" class="page-section">
         <div class="cart-page">
           <button class="cart-close-btn" onclick="showPage('dashboard')">&times;</button>
@@ -1385,7 +1570,7 @@
         </div>
       </div>
 
-      <footer>Donmac Data Hub · Accra</footer>
+      <footer>Copyright © 2024 Donmac Data Hub. All rights reserved.</footer>
     </div>
   </div>
 
@@ -1434,6 +1619,121 @@
 </div>
 
 <script>
+  // Initialize Supabase
+  const supabaseUrl = 'https://bntmwrwlxuxjwckjxfti.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJudG13cndseHV4andja2p4ZnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzE1MTQsImV4cCI6MjA4ODQ0NzUxNH0.At6UxwJnLf89ABHjF6veLWTvUrbGnltuaLxuYM82d5E';
+  const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
+
+  // Auth Guard
+  let currentUser = null;
+  let userProfile = null;
+
+  async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = 'login.html';
+      return;
+    }
+    currentUser = session.user;
+
+    // Load profile
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (error || !profile) {
+      console.error('Error loading profile:', error);
+      return;
+    }
+
+    userProfile = profile;
+    updateUIWithProfile();
+  }
+
+  async function updateUIWithProfile() {
+    if (!userProfile) return;
+    document.querySelector('.agent-badge').innerHTML = `<i class="fas fa-id-card"></i> ${userProfile.agent_code}`;
+    document.querySelector('.balance-pill').innerHTML = `<i class="fas fa-wallet"></i> GH₵ ${parseFloat(userProfile.balance).toFixed(2)}`;
+    document.querySelector('#dashboardPage .stat-card:first-child .stat-number').innerText = `GH₵ ${parseFloat(userProfile.balance).toFixed(2)}`;
+    document.querySelector('.wallet-box .amount').innerText = `GH₵ ${parseFloat(userProfile.balance).toFixed(2)}`;
+
+    // Load Dashboard Stats
+    const { data: orders } = await supabase.from('orders').select('amount, bundle_gb').eq('user_id', currentUser.id).eq('status', 'Completed');
+    const { data: payments } = await supabase.from('transactions').select('amount').eq('user_id', currentUser.id).eq('type', 'Credit').eq('status', 'Completed');
+
+    let totalGB = 0, totalSpent = 0, totalPayments = 0;
+    if (orders) {
+      orders.forEach(o => {
+        totalGB += parseFloat(o.bundle_gb);
+        totalSpent += parseFloat(o.amount);
+      });
+    }
+    if (payments) {
+      payments.forEach(p => totalPayments += parseFloat(p.amount));
+    }
+
+    const cards = document.querySelectorAll('#dashboardPage .stat-card .stat-number');
+    cards[1].innerText = `${totalGB} GB`;
+    cards[2].innerText = `GH₵ ${totalSpent.toFixed(2)}`;
+    cards[3].innerText = `GH₵ ${totalPayments.toFixed(2)}`;
+
+    // Blocked check
+    if (userProfile.is_blocked) {
+      document.body.innerHTML = `
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; text-align:center; padding:20px;">
+          <i class="fas fa-user-slash" style="font-size:4rem; color:#ef4444; margin-bottom:20px;"></i>
+          <h1>Account Blocked</h1>
+          <p style="color:#64748b; margin-top:10px;">Your account has been suspended. Please contact support via WhatsApp for assistance.</p>
+          <button onclick="handleLogout()" class="btn" style="margin-top:30px; max-width:200px;">Logout</button>
+        </div>
+      `;
+      return;
+    }
+
+    // Admin check
+    if (userProfile.email === 'donmacdatahub@gmail.com') {
+      showAdminMenu();
+    }
+  }
+
+  function showToast(msg) {
+    let toast = document.getElementById('customToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'customToast';
+      toast.style.cssText = "position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#0b2b3c; color:white; padding:15px 30px; border-radius:50px; z-index:10000; box-shadow:0 10px 30px rgba(0,0,0,0.2); font-weight:600; display:none;";
+      document.body.appendChild(toast);
+    }
+    toast.innerText = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+  }
+
+  function showAdminMenu() {
+    const menuItems = `
+      <div class="drawer-item" data-section="admin"><i class="fas fa-user-shield"></i> Admin Panel</div>
+    `;
+    const sidebarItems = `
+      <div class="nav-item" data-section="admin"><i class="fas fa-user-shield"></i> Admin Panel</div>
+    `;
+
+    // Add before logout
+    const logoutDrawer = document.querySelector('.drawer-item[data-section="logout"]');
+    logoutDrawer.insertAdjacentHTML('beforebegin', menuItems);
+
+    const logoutSidebar = document.querySelector('.sidebar-desktop .nav-item[data-section="logout"]');
+    logoutSidebar.insertAdjacentHTML('beforebegin', sidebarItems);
+
+    // Re-bind events
+    document.querySelectorAll('.drawer-item[data-section="admin"], .sidebar-desktop .nav-item[data-section="admin"]').forEach(n => {
+      n.addEventListener('click', () => showPage('admin'));
+    });
+  }
+
+  checkAuth();
+
   // Global variables
   let currentPaymentMethod = null;
   let cartItems = [];
@@ -1459,6 +1759,7 @@
     orders: document.getElementById('ordersPage'),
     topup: document.getElementById('topupPage'),
     transactions: document.getElementById('transactionsPage'),
+      admin: document.getElementById('adminPage'),
     cart: document.getElementById('cartPage')
   };
   
@@ -1466,16 +1767,30 @@
   const drawerItems = document.querySelectorAll('.drawer-item');
 
   window.showPage = function(pageId) {
-    Object.values(pages).forEach(p => p.classList.remove('active'));
+    Object.values(pages).forEach(p => { if(p) p.classList.remove('active') });
     if (pages[pageId]) pages[pageId].classList.add('active');
     desktopNav.forEach(n => n.classList.toggle('active', n.getAttribute('data-section') === pageId));
     drawerItems.forEach(n => n.classList.toggle('active', n.getAttribute('data-section') === pageId));
     if (pageId === 'cart') updateCartDisplay();
+    if (pageId === 'admin') loadAdminUsers();
+    if (pageId === 'orders') loadOrders();
+    if (pageId === 'transactions') loadTransactions();
     closeDrawerFunc();
   };
 
-  desktopNav.forEach(n => n.addEventListener('click', () => showPage(n.getAttribute('data-section'))));
-  drawerItems.forEach(n => n.addEventListener('click', () => showPage(n.getAttribute('data-section'))));
+  desktopNav.forEach(n => n.addEventListener('click', () => {
+    const sec = n.getAttribute('data-section');
+    if (sec === 'logout') handleLogout(); else showPage(sec);
+  }));
+  drawerItems.forEach(n => n.addEventListener('click', () => {
+    const sec = n.getAttribute('data-section');
+    if (sec === 'logout') handleLogout(); else showPage(sec);
+  }));
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = 'login.html';
+  }
   document.getElementById('quickTopupBtn').addEventListener('click', () => showPage('topup'));
 
   // Package data
@@ -1559,6 +1874,7 @@
     selectedPackage = { gb, price, networkName, networkKey };
     
     // Update recipient modal
+    document.getElementById("recipientNetworkName").innerText = networkName;
     summaryNetwork.innerText = networkName;
     summarySize.innerText = gb + 'GB';
     summaryPrice.innerText = 'GH₵' + price.toFixed(2);
@@ -1583,7 +1899,7 @@
     
     const phone = recipientInput.value.trim();
     if (!phone) {
-      alert('Please enter recipient phone number');
+      showToast('Please enter recipient phone number');
       return;
     }
     
@@ -1599,7 +1915,7 @@
     updateCartDisplay();
     recipientModal.classList.remove('show');
     recipientInput.value = '';
-    alert('Added to cart!');
+    showToast('Added to cart!');
   });
 
   // Payment method selection
@@ -1623,7 +1939,7 @@
   // Copy to clipboard - fixed
   window.copyToClipboard = function(text) {
     navigator.clipboard.writeText(text).then(() => {
-      alert('Copied to clipboard!');
+      showToast('Copied to clipboard!');
     }).catch(err => {
       // Fallback
       const textarea = document.createElement('textarea');
@@ -1632,38 +1948,47 @@
       textarea.select();
       document.execCommand('copy');
       document.body.removeChild(textarea);
-      alert('Copied to clipboard!');
+      showToast('Copied to clipboard!');
     });
   };
 
-  window.submitMobileMoneyPayment = function() {
+  window.submitMobileMoneyPayment = async function() {
     const amount = document.getElementById('topupAmount').value;
     const phone = document.getElementById('topupPhone').value;
     const screenshot = document.getElementById('screenshotUpload').files[0];
     
     if (!amount || !phone) {
-      alert('Please enter amount and phone number');
+      showToast('Please enter amount and phone number');
       return;
     }
     
     if (!screenshot) {
-      alert('Please upload payment screenshot');
+      showToast('Please upload payment screenshot');
       return;
     }
     
-    const message = `New Mobile Money Payment:\nAmount: GH₵${amount}\nFrom: ${phone}\nScreenshot attached`;
-    alert(`WhatsApp message would be sent:\n\n${message}\n\nTo: +233549358359`);
+    await supabase.from('transactions').insert({
+        user_id: currentUser.id,
+        type: 'Credit',
+        description: 'Wallet top-up via Mobile Money (Pending verification)',
+        amount: parseFloat(amount),
+        balance_after: userProfile.balance,
+        status: 'Pending'
+    });
+
+    const message = `Hello, I just made a payment of GH₵${amount} for my data hub wallet.\nAgent Code: ${userProfile.agent_code}\nPhone: ${phone}`;
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/233549358359?text=${encoded}`, '_blank');
     
-    addTransaction('Top-up', `Wallet top-up via Mobile Money`, `+₵${amount}`, 'Completed');
+    showToast('Payment submitted! Please send the screenshot on WhatsApp.');
+    showPage('dashboard');
   };
 
   window.processPaystackPayment = function() {
     const amount = document.getElementById('topupAmount').value;
-    const email = document.getElementById('paystackEmail').value;
-    const phone = document.getElementById('topupPhone').value;
     
-    if (!amount || !email || !phone) {
-      alert('Please enter amount, email and phone number');
+    if (!amount) {
+      showToast('Please enter amount');
       return;
     }
     
@@ -1672,26 +1997,37 @@
     
     const handler = PaystackPop.setup({
       key: 'pk_test_xxxxxxxxxxxxxxxxxxxxx',
-      email: email,
-      amount: total * 100,
+      email: currentUser.email,
+      amount: Math.round(total * 100),
       currency: 'GHS',
       metadata: {
+        agent_code: userProfile.agent_code,
+        full_name: userProfile.full_name,
         custom_fields: [
-          {
-            display_name: "Phone Number",
-            variable_name: "phone_number",
-            value: phone
-          }
+          { display_name: "Agent Code", variable_name: "agent_code", value: userProfile.agent_code },
+          { display_name: "Original Amount", variable_name: "original_amount", value: amount }
         ]
       },
-      callback: function(response) {
-        alert(`Payment successful! Reference: ${response.reference}`);
-        console.log(`Admin notification: Payment of GH₵${total} from ${email}`);
-        addTransaction('Top-up', `Wallet top-up via Paystack (inc. 2% fee)`, `+₵${amount}`, 'Completed');
-        updateWalletBalance(amount);
+      callback: async function(response) {
+        showToast(`Payment successful! Reference: ${response.reference}`);
+        const newBalance = parseFloat(userProfile.balance) + parseFloat(amount);
+        await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+
+        await supabase.from('transactions').insert({
+            user_id: currentUser.id,
+            type: 'Credit',
+            description: 'Wallet top-up via Paystack',
+            amount: parseFloat(amount),
+            balance_after: newBalance,
+            status: 'Completed'
+        });
+
+        userProfile.balance = newBalance;
+        updateUIWithProfile();
+        showPage('dashboard');
       },
       onClose: function() {
-        alert('Payment cancelled');
+        showToast('Payment cancelled');
       }
     });
     
@@ -1776,54 +2112,271 @@
 
   document.getElementById('processOrders').addEventListener('click', () => {
     if (cartItems.length === 0) {
-      alert('Cart is empty');
+      showToast('Cart is empty');
       return;
     }
     
     const paymentMethod = document.querySelector('input[name="payment"]:checked').nextElementSibling.innerText;
+    const total = parseFloat(summaryTotal.innerText.replace('₵', ''));
     
     if (paymentMethod === 'Pay with Wallet') {
-      const walletBalance = parseFloat(document.querySelector('.balance-pill').innerText.replace('GH₵ ', ''));
-      const total = parseFloat(summaryTotal.innerText.replace('₵', ''));
+      const walletBalance = parseFloat(userProfile.balance);
       
       if (walletBalance < total) {
-        alert('Insufficient wallet balance. Please top up or use Paystack.');
+        showToast('Insufficient wallet balance. Please top up or use Paystack.');
         return;
       }
       
-      alert(`Processing ${cartItems.length} order(s) with Wallet`);
-      
-      const newBalance = walletBalance - total;
-      document.querySelector('.balance-pill').innerHTML = `<i class="fas fa-wallet"></i> GH₵ ${newBalance.toFixed(2)}`;
-      document.querySelector('#dashboardPage .stat-card:first-child .stat-number').innerText = `GH₵ ${newBalance.toFixed(2)}`;
-      
-      cartItems = [];
-      updateCartDisplay();
-      showPage('dashboard');
-      
+      processOrderSubmission('Wallet', total);
     } else {
-      const email = prompt('Enter your email for receipt:', 'customer@example.com');
-      if (!email) return;
-      
-      const total = parseFloat(summaryTotal.innerText.replace('₵', ''));
       const fee = total * 0.02;
       const grandTotal = total + fee;
       
-      alert(`Paystack payment would process:\nSubtotal: ₵${total.toFixed(2)}\n2% Fee: ₵${fee.toFixed(2)}\nTotal: ₵${grandTotal.toFixed(2)}\n\nEmail receipt to: ${email}`);
-      
-      cartItems = [];
-      updateCartDisplay();
-      showPage('dashboard');
+      const handler = PaystackPop.setup({
+        key: 'pk_test_xxxxxxxxxxxxxxxxxxxxx',
+        email: currentUser.email,
+        amount: Math.round(grandTotal * 100),
+        currency: 'GHS',
+        metadata: {
+          agent_code: userProfile.agent_code,
+          full_name: userProfile.full_name,
+          order_details: cartItems
+        },
+        callback: function(response) {
+          processOrderSubmission('Paystack', total);
+        }
+      });
+      handler.openIframe();
     }
   });
+
+  async function processOrderSubmission(method, amount) {
+    if (method === 'Wallet') {
+      const newBalance = parseFloat(userProfile.balance) - amount;
+      await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+      userProfile.balance = newBalance;
+      updateUIWithProfile();
+    }
+
+    for (const item of cartItems) {
+      await supabase.from('orders').insert({
+        user_id: currentUser.id,
+        network: item.network,
+        bundle_gb: item.gb,
+        recipient_phone: item.phone,
+        amount: item.price,
+        status: 'Pending',
+        payment_method: method
+      });
+    }
+
+    await supabase.from('transactions').insert({
+      user_id: currentUser.id,
+      type: 'Debit',
+      description: `Data purchase for ${cartItems.length} recipients`,
+      amount: -amount,
+      balance_after: userProfile.balance,
+      status: 'Completed'
+    });
+
+    showToast(`Orders processed successfully via ${method}`);
+    cartItems = [];
+    updateCartDisplay();
+    showPage('dashboard');
+  }
 
   document.getElementById('cartBtn').addEventListener('click', () => {
     showPage('cart');
   });
 
   document.getElementById('whatsappBtn').addEventListener('click', () => {
-    window.open('https://wa.me/233549358359', '_blank');
+    window.open('https://whatsapp.com/channel/0029VbBdxs77oQhkjJiqqO1y', '_blank');
   });
+
+  window.resetTransFilters = () => {
+    document.getElementById('transDateFrom').value = '';
+    document.getElementById('transDateTo').value = '';
+    document.getElementById('transType').value = 'all';
+    document.getElementById('transStatus').value = 'all';
+    document.getElementById('transSearch').value = '';
+    loadTransactions();
+  };
+
+  window.resetOrderFilters = () => {
+    document.getElementById('orderDateFrom').value = '';
+    document.getElementById('orderDateTo').value = '';
+    document.getElementById('orderStatusFilter').value = 'all';
+    document.getElementById('orderNetworkFilter').value = 'all';
+    document.getElementById('orderSearch').value = '';
+    loadOrders();
+  };
+
+  async function loadTransactions() {
+    if (!currentUser) return;
+    const dateFrom = document.getElementById('transDateFrom').value;
+    const dateTo = document.getElementById('transDateTo').value;
+    const type = document.getElementById('transType').value;
+    const status = document.getElementById('transStatus').value;
+    const search = document.getElementById('transSearch').value;
+
+    let query = supabase.from('transactions').select('*').eq('user_id', currentUser.id);
+    if (dateFrom) query = query.gte('created_at', dateFrom);
+    if (dateTo) query = query.lte('created_at', dateTo + 'T23:59:59');
+    if (type !== 'all') query = query.eq('type', type.charAt(0).toUpperCase() + type.slice(1));
+    if (status !== 'all') query = query.eq('status', status.charAt(0).toUpperCase() + status.slice(1));
+    if (search) query = query.ilike('description', `%${search}%`);
+
+    const { data: trans, error } = await query.order('created_at', { ascending: false });
+    if (error) return;
+
+    let credits = 0, debits = 0;
+    document.getElementById('transactionsBody').innerHTML = trans.map(t => {
+      const amt = parseFloat(t.amount);
+      if (amt > 0) credits += amt; else debits += Math.abs(amt);
+      return `<tr><td>#${t.id.toString().slice(-5)}</td><td>${t.type}</td><td>${t.description}</td><td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td><td>₵${amt.toFixed(2)}</td><td>₵${parseFloat(t.balance_after).toFixed(2)}</td><td>${new Date(t.created_at).toLocaleString()}</td></tr>`;
+    }).join('');
+
+    document.getElementById('totalTransCount').innerText = trans.length;
+    document.getElementById('totalCredits').innerText = `₵${credits.toFixed(2)}`;
+    document.getElementById('totalDebits').innerText = `₵${debits.toFixed(2)}`;
+    document.getElementById('netAmount').innerText = `₵${(credits - debits).toFixed(2)}`;
+    document.getElementById('transTableTitle').innerText = `Transactions · ${trans.length} total`;
+  }
+
+  async function loadOrders() {
+    if (!currentUser) return;
+    const dateFrom = document.getElementById('orderDateFrom').value;
+    const dateTo = document.getElementById('orderDateTo').value;
+    const status = document.getElementById('orderStatusFilter').value;
+    const network = document.getElementById('orderNetworkFilter').value;
+    const search = document.getElementById('orderSearch').value;
+
+    let query = supabase.from('orders').select('*').eq('user_id', currentUser.id);
+    if (dateFrom) query = query.gte('created_at', dateFrom);
+    if (dateTo) query = query.lte('created_at', dateTo + 'T23:59:59');
+    if (status !== 'all') query = query.eq('status', status.charAt(0).toUpperCase() + status.slice(1));
+    if (network !== 'all') query = query.eq('network', network);
+    if (search) query = query.or(`recipient_phone.ilike.%${search}%,id.cast.text.ilike.%${search}%`);
+
+    const { data: orders, error } = await query.order('created_at', { ascending: false });
+    if (error) return;
+
+    let totalAmt = 0, totalGB = 0;
+    let counts = { pending: 0, processing: 0, completed: 0, failed: 0 };
+
+    document.getElementById('ordersBody').innerHTML = orders.map(o => {
+      totalAmt += parseFloat(o.amount);
+      totalGB += parseFloat(o.bundle_gb);
+      counts[o.status.toLowerCase()]++;
+      return `<tr><td>#${o.id.toString().slice(-5)}</td><td>${o.network}</td><td>${o.bundle_gb}GB</td><td>${o.recipient_phone}</td><td><span class="status-${o.status.toLowerCase()}">${o.status}</span></td><td>₵${parseFloat(o.amount).toFixed(2)}</td><td>${new Date(o.created_at).toLocaleString()}</td></tr>`;
+    }).join('');
+
+    document.getElementById('totalOrdersCount').innerText = orders.length;
+    document.getElementById('totalOrdersAmount').innerText = `₵${totalAmt.toFixed(2)}`;
+    document.getElementById('totalOrdersGB').innerText = `${totalGB} GB`;
+    document.getElementById('pendingOrders').innerText = counts.pending;
+    document.getElementById('processingOrders').innerText = counts.processing;
+    document.getElementById('completedOrders').innerText = counts.completed;
+    document.getElementById('failedOrders').innerText = counts.failed;
+    document.getElementById('ordersTableTitle').innerText = `Orders · ${orders.length} total`;
+  }
+
+  async function loadAdminUsers() {
+    if (userProfile.email !== 'donmacdatahub@gmail.com') return;
+    const search = document.getElementById('adminUserSearch').value.toLowerCase();
+
+    let query = supabase.from('profiles').select('*');
+    if (search) {
+      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,agent_code.ilike.%${search}%`);
+    }
+
+    const { data: profile_list, error } = await query.order('agent_code', { ascending: true });
+    if (error) return;
+
+    let totalBalance = 0;
+    document.getElementById('adminUsersBody').innerHTML = profile_list.map(u => {
+      totalBalance += parseFloat(u.balance);
+      return `
+        <tr>
+          <td>${u.agent_code}</td>
+          <td>${u.full_name}<br><small>${u.email}</small></td>
+          <td>₵${parseFloat(u.balance).toFixed(2)}</td>
+          <td>${u.is_blocked ? '<span style="color:red">Blocked</span>' : '<span style="color:green">Active</span>'}</td>
+          <td>
+            <button onclick="adjustBalance('${u.id}', 'credit')" title="Credit"><i class="fas fa-plus-circle"></i></button>
+            <button onclick="adjustBalance('${u.id}', 'debit')" title="Debit"><i class="fas fa-minus-circle"></i></button>
+            <button onclick="toggleBlock('${u.id}', ${u.is_blocked})" title="${u.is_blocked ? 'Unblock' : 'Block'}">
+              <i class="fas ${u.is_blocked ? 'fa-unlock' : 'fa-user-slash'}"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    document.getElementById('adminUserCount').innerText = profile_list.length;
+    document.getElementById('adminTotalBalance').innerText = `₵${totalBalance.toFixed(2)}`;
+    loadAdminOrders();
+  }
+
+  async function loadAdminOrders() {
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('*, profiles(full_name, agent_code)')
+      .order('created_at', { ascending: false });
+
+    if (error) return;
+
+    document.getElementById('adminOrderCount').innerText = orders.length;
+    document.getElementById('adminOrdersBody').innerHTML = orders.map(o => `
+      <tr>
+        <td>#${o.id.toString().slice(-5)}</td>
+        <td>${o.profiles?.agent_code || '???'}<br><small>${o.profiles?.full_name || 'Deleted'}</small></td>
+        <td>${o.network} ${o.bundle_gb}GB<br><small>${o.recipient_phone}</small></td>
+        <td><span class="status-${o.status.toLowerCase()}">${o.status}</span></td>
+        <td>
+          <select onchange="updateOrderStatus('${o.id}', this.value)" style="padding:4px; border-radius:4px;">
+            <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
+            <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
+            <option value="Completed" ${o.status === 'Completed' ? 'selected' : ''}>Completed</option>
+            <option value="Failed" ${o.status === 'Failed' ? 'selected' : ''}>Failed</option>
+          </select>
+          <button onclick="deleteOrder('${o.id}')" title="Delete" style="color:red; background:none; border:none; cursor:pointer;"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  window.updateOrderStatus = async (orderId, newStatus) => {
+    await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+    showToast(`Order status updated to ${newStatus}`);
+    loadAdminOrders();
+  };
+
+  window.deleteOrder = async (orderId) => {
+    if (!confirm('Are you sure you want to delete this order?')) return;
+    await supabase.from('orders').delete().eq('id', orderId);
+    showToast('Order deleted');
+    loadAdminOrders();
+  };
+
+  window.adjustBalance = async (userId, type) => {
+    const amount = prompt(`Enter amount to ${type}:`);
+    if (!amount || isNaN(amount)) return;
+
+    const { data: profile } = await supabase.from('profiles').select('balance').eq('id', userId).single();
+    const newBalance = type === 'credit' ? parseFloat(profile.balance) + parseFloat(amount) : parseFloat(profile.balance) - parseFloat(amount);
+
+    await supabase.from('profiles').update({ balance: newBalance }).eq('id', userId);
+    showToast(`User ${type}ed successfully`);
+    loadAdminUsers();
+  };
+
+  window.toggleBlock = async (userId, currentState) => {
+    if (!confirm(`Are you sure you want to ${currentState ? 'unblock' : 'block'} this user?`)) return;
+    await supabase.from('profiles').update({ is_blocked: !currentState }).eq('id', userId);
+    showToast(`User ${currentState ? 'unblocked' : 'blocked'} successfully`);
+    loadAdminUsers();
+  };
 
   // Initialize
   updateCartDisplay();
