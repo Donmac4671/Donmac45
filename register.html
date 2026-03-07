@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register · Donmac Data Hub</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #0b2b3c;
+      --accent: #f5a623;
+      --bg: #e2eaf2;
+      --white: #ffffff;
+      --text: #1e3a4a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .card { background: var(--white); padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 450px; }
+    .logo { text-align: center; margin-bottom: 25px; }
+    .logo h1 { font-size: 1.8rem; color: var(--primary); }
+    .logo span { color: var(--accent); }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text); font-size: 0.85rem; }
+    input { width: 100%; padding: 12px 20px; border: 1.5px solid #e2e8f0; border-radius: 60px; font-size: 1rem; outline: none; transition: 0.2s; }
+    input:focus { border-color: var(--accent); }
+    .btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 60px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+    .btn:hover { background: #1f4e6f; transform: translateY(-1px); }
+    .footer-links { text-align: center; margin-top: 24px; font-size: 0.9rem; color: #64748b; }
+    .footer-links a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 12px 24px; border-radius: 40px; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <h1>Donmac <span>Data Hub</span></h1>
+      <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">Create an agent account</p>
+    </div>
+    <form id="registerForm">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="fullname" placeholder="John Doe" required>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="email" placeholder="john@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="phone" placeholder="0241234567" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn">Register</button>
+    </form>
+    <div class="footer-links">
+      <p>Already have an account? <a href="login.html">Log In</a></p>
+    </div>
+  </div>
+  <div id="toast"></div>
+
+  <script>
+    const supabaseUrl = 'https://bntmwrwlxuxjwckjxfti.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJudG13cndseHV4andja2p4ZnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzE1MTQsImV4cCI6MjA4ODQ0NzUxNH0.At6UxwJnLf89ABHjF6veLWTvUrbGnltuaLxuYM82d5E';
+    const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.style.display = 'block';
+      setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullname = document.getElementById('fullname').value;
+      const email = document.getElementById('email').value;
+      const phone = document.getElementById('phone').value;
+      const password = document.getElementById('password').value;
+
+      // 1. Sign up user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError) {
+        showToast(authError.message);
+        return;
+      }
+
+      if (authData.user) {
+        // 2. Generate Agent Code
+        let agentCode = '001';
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('agent_code')
+          .order('agent_code', { ascending: false })
+          .limit(1);
+
+        if (!profileError && profiles.length > 0) {
+          const lastCode = parseInt(profiles[0].agent_code);
+          agentCode = (lastCode + 1).toString().padStart(3, '0');
+        }
+
+        // 3. Create profile
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            full_name: fullname,
+            email: email,
+            phone: phone,
+            agent_code: agentCode,
+            balance: 0.00,
+            is_blocked: false
+          });
+
+        if (insertError) {
+          showToast("Profile error: " + insertError.message);
+        } else {
+          showToast("Registration successful! Logging in...");
+          setTimeout(() => window.location.href = 'index.html', 1500);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
