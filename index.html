@@ -1517,10 +1517,8 @@
           <h3 style="margin-bottom:12px;"><i class="fas fa-history"></i> Transaction History</h3>
           <table>
             <thead><tr><th>ID</th><th>TYPE</th><th>DESCRIPTION</th><th>STATUS</th><th>AMOUNT</th><th>DATE</th></tr></thead>
-            <tbody>
-              <tr><td>#29757</td><td>Top-up</td><td>Wallet top-up via MTN MoMo</td><td><span class="status-completed">Completed</span></td><td>+₵50.00</td><td>Mar 07, 2026 10:23</td></tr>
-              <tr><td>#29497</td><td>Top-up</td><td>Wallet top-up via Telecel</td><td><span class="status-completed">Completed</span></td><td>+₵30.00</td><td>Mar 07, 2026 09:15</td></tr>
-              <tr><td>#29292</td><td>Top-up</td><td>Wallet top-up via AT</td><td><span class="status-completed">Completed</span></td><td>+₵20.00</td><td>Mar 07, 2026 08:44</td></tr>
+            <tbody id="topupHistoryBody">
+              <!-- JS dynamic load -->
             </tbody>
           </table>
         </div>
@@ -1625,8 +1623,18 @@
 
         <div class="recent-orders" style="margin-top: 30px;">
           <h3 style="margin-bottom:20px;"><i class="fas fa-tasks"></i> Order Management</h3>
+          <div class="filter-bar" style="border-radius: 12px; margin-bottom: 15px; gap: 10px;">
+            <select id="adminOrderStatusFilter" class="form-control" style="max-width: 150px;" onchange="loadAdminOrders()">
+              <option value="all">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="Completed">Completed</option>
+              <option value="Failed">Failed</option>
+            </select>
+            <input type="text" id="adminOrderSearch" placeholder="Search by user or phone..." class="form-control" style="max-width: 300px;" oninput="loadAdminOrders()">
+          </div>
           <table>
-            <thead><tr><th>ID</th><th>USER</th><th>BUNDLE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+            <thead><tr><th>ID</th><th>USER</th><th>BUNDLE</th><th>STATUS</th><th>DATE/TIME</th><th>ACTIONS</th></tr></thead>
             <tbody id="adminOrdersBody"></tbody>
           </table>
         </div>
@@ -1737,10 +1745,13 @@
 
   async function updateUIWithProfile() {
     if (!userProfile) return;
-    document.querySelector('.agent-badge').innerHTML = `<i class="fas fa-id-card"></i> ${userProfile.agent_code}`;
-    document.querySelector('.balance-pill').innerHTML = `<i class="fas fa-wallet"></i> GH₵ ${parseFloat(userProfile.balance).toFixed(2)}`;
-    document.querySelector('#dashboardPage .stat-card:first-child .stat-number').innerText = `GH₵ ${parseFloat(userProfile.balance).toFixed(2)}`;
-    document.querySelector('.wallet-box .amount').innerText = `GH₵ ${parseFloat(userProfile.balance).toFixed(2)}`;
+    const balance = parseFloat(userProfile.balance || 0);
+    const agentCode = userProfile.agent_code || '---';
+
+    document.querySelector('.agent-badge').innerHTML = `<i class="fas fa-id-card"></i> ${agentCode}`;
+    document.querySelector('.balance-pill').innerHTML = `<i class="fas fa-wallet"></i> GH₵ ${balance.toFixed(2)}`;
+    document.querySelector('#dashboardPage .stat-card:first-child .stat-number').innerText = `GH₵ ${balance.toFixed(2)}`;
+    document.querySelector('.wallet-box .amount').innerText = `GH₵ ${balance.toFixed(2)}`;
 
     // Load Dashboard Stats
     const { data: orders } = await supabaseClient.from('orders').select('amount, bundle_gb').eq('user_id', currentUser.id).eq('status', 'Completed');
@@ -1924,6 +1935,7 @@
     if (pageId === 'admin') loadAdminUsers();
     if (pageId === 'orders') loadOrders();
     if (pageId === 'transactions') loadTransactions();
+    if (pageId === 'topup') loadTopupHistory();
     closeDrawerFunc();
   };
 
@@ -2309,7 +2321,7 @@
           order_details: cartItems
         },
         callback: function(response) {
-          processOrderSubmission('Paystack', total);
+          processOrderSubmission('Paystack', totalWithPossibleFee);
         }
       });
       handler.openIframe();
@@ -2401,9 +2413,10 @@
 
     let credits = 0, debits = 0;
     document.getElementById('transactionsBody').innerHTML = trans.map(t => {
-      const amt = parseFloat(t.amount);
+      const amt = parseFloat(t.amount || 0);
+      const balAfter = parseFloat(t.balance_after || 0);
       if (amt > 0) credits += amt; else debits += Math.abs(amt);
-      return `<tr><td>#${t.id.toString().slice(-5)}</td><td>${t.type}</td><td>${t.description}</td><td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td><td>₵${amt.toFixed(2)}</td><td>₵${parseFloat(t.balance_after).toFixed(2)}</td><td>${new Date(t.created_at).toLocaleString()}</td></tr>`;
+      return `<tr><td>#${t.id.toString().slice(-5)}</td><td>${t.type}</td><td>${t.description}</td><td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td><td>₵${amt.toFixed(2)}</td><td>₵${balAfter.toFixed(2)}</td><td>${new Date(t.created_at).toLocaleString()}</td></tr>`;
     }).join('');
 
     document.getElementById('totalTransCount').innerText = trans.length;
@@ -2411,6 +2424,36 @@
     document.getElementById('totalDebits').innerText = `₵${debits.toFixed(2)}`;
     document.getElementById('netAmount').innerText = `₵${(credits - debits).toFixed(2)}`;
     document.getElementById('transTableTitle').innerText = `Transactions · ${trans.length} total`;
+  }
+
+  async function loadTopupHistory() {
+    if (!currentUser) return;
+    const { data: trans, error } = await supabaseClient
+      .from('transactions')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .eq('type', 'Credit')
+      .order('created_at', { ascending: false });
+
+    if (error) return;
+
+    let totalAmt = 0, completedAmt = 0, processingCount = 0, pendingCount = 0;
+
+    document.getElementById('topupHistoryBody').innerHTML = trans.map(t => {
+      const amt = parseFloat(t.amount);
+      totalAmt += amt;
+      if (t.status === 'Completed') completedAmt += amt;
+      else if (t.status === 'Processing') processingCount++;
+      else if (t.status === 'Pending') pendingCount++;
+
+      return `<tr><td>#${t.id.toString().slice(-5)}</td><td>${t.type}</td><td>${t.description}</td><td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td><td>₵${amt.toFixed(2)}</td><td>${new Date(t.created_at).toLocaleString()}</td></tr>`;
+    }).join('');
+
+    const stats = document.querySelectorAll('#topupPage .topup-stat-card .value');
+    stats[0].innerText = `₵${totalAmt.toFixed(2)}`;
+    stats[1].innerText = processingCount;
+    stats[2].innerText = `+ ₵${completedAmt.toFixed(2)}`;
+    stats[3].innerText = pendingCount;
   }
 
   async function loadOrders() {
@@ -2489,20 +2532,36 @@
   }
 
   async function loadAdminOrders() {
-    const { data: orders, error } = await supabaseClient
-      .from('orders')
-      .select('*, profiles(full_name, agent_code)')
-      .order('created_at', { ascending: false });
+    const statusFilter = document.getElementById('adminOrderStatusFilter').value;
+    const search = document.getElementById('adminOrderSearch').value.toLowerCase();
+
+    let query = supabaseClient.from('orders').select('*, profiles(full_name, agent_code)');
+
+    if (statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
+    }
+
+    const { data: orders, error } = await query.order('created_at', { ascending: false });
 
     if (error) return;
 
-    document.getElementById('adminOrderCount').innerText = orders.length;
-    document.getElementById('adminOrdersBody').innerHTML = orders.map(o => `
+    let filtered = orders;
+    if (search) {
+      filtered = orders.filter(o =>
+        (o.profiles?.full_name || '').toLowerCase().includes(search) ||
+        (o.profiles?.agent_code || '').toLowerCase().includes(search) ||
+        (o.recipient_phone || '').toLowerCase().includes(search)
+      );
+    }
+
+    document.getElementById('adminOrderCount').innerText = filtered.length;
+    document.getElementById('adminOrdersBody').innerHTML = filtered.map(o => `
       <tr>
         <td>#${o.id.toString().slice(-5)}</td>
         <td>${o.profiles?.agent_code || '???'}<br><small>${o.profiles?.full_name || 'Deleted'}</small></td>
         <td>${o.network} ${o.bundle_gb}GB<br><small>${o.recipient_phone}</small></td>
         <td><span class="status-${o.status.toLowerCase()}">${o.status}</span></td>
+        <td>${new Date(o.created_at).toLocaleString()}</td>
         <td>
           <select onchange="updateOrderStatus('${o.id}', this.value)" style="padding:4px; border-radius:4px;">
             <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
@@ -2539,7 +2598,7 @@
     }
 
     const { data: profile } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
-    const currentBalance = parseFloat(profile.balance);
+    const currentBalance = parseFloat(profile.balance || 0);
     const newBalance = type === 'credit' ? currentBalance + amount : currentBalance - amount;
 
     if (type === 'debit' && newBalance < 0) {
