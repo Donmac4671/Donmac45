@@ -2155,6 +2155,21 @@
       return;
     }
 
+    if (typeof PaystackPop === 'undefined') {
+      showToast('Paystack is not loaded. Please refresh the page.');
+      return;
+    }
+
+    if (!currentUser || !currentUser.email) {
+      showToast('Session expired. Please log in again.');
+      return;
+    }
+
+    if (!userProfile) {
+      showToast('User profile not loaded. Please refresh.');
+      return;
+    }
+
     const fee = parseFloat(amount) * 0.02;
     const total = parseFloat(amount) + fee;
 
@@ -2213,12 +2228,10 @@
   }
 
   window.cancelTopup = function() {
-    document.getElementById('topupAmount').value = '';
-    document.getElementById('topupPhone').value = '';
-    document.getElementById('paystackEmail').value = '';
-    document.getElementById('screenshotUpload').value = '';
-    document.getElementById('paystackDetails').style.display = 'none';
-    document.getElementById('mobileMoneyDetails').style.display = 'none';
+    if (document.getElementById('topupAmount')) document.getElementById('topupAmount').value = '';
+    if (document.getElementById('topupPhone')) document.getElementById('topupPhone').value = '';
+    if (document.getElementById('paystackDetails')) document.getElementById('paystackDetails').style.display = 'none';
+    if (document.getElementById('mobileMoneyDetails')) document.getElementById('mobileMoneyDetails').style.display = 'none';
     document.getElementById('selectPaystack').classList.remove('selected');
     document.getElementById('selectMobileMoney').classList.remove('selected');
     showPage('dashboard');
@@ -2302,10 +2315,10 @@
       return;
     }
 
-    const paymentMethod = document.querySelector('input[name="payment"]:checked').nextElementSibling.innerText;
+    const isWallet = document.getElementById('payWallet').checked;
     const totalWithPossibleFee = parseFloat(summaryTotal.innerText.replace(/[^\d.]/g, '')) || 0;
 
-    if (paymentMethod === 'Pay with Wallet') {
+    if (isWallet) {
       const walletBalance = parseFloat(userProfile.balance || 0);
 
       if (walletBalance < totalWithPossibleFee) {
@@ -2317,6 +2330,21 @@
     } else {
       // summaryTotal ALREADY includes the 2% fee if Paystack is selected (calculated in updateCartDisplay)
       const grandTotal = totalWithPossibleFee;
+
+      if (typeof PaystackPop === 'undefined') {
+        showToast('Paystack is not loaded. Please refresh the page.');
+        return;
+      }
+
+      if (!currentUser || !currentUser.email) {
+        showToast('Session expired. Please log in again.');
+        return;
+      }
+
+      if (!userProfile) {
+        showToast('User profile not loaded. Please refresh.');
+        return;
+      }
 
       const handler = PaystackPop.setup({
         key: 'pk_live_6c14e62b602fe818a0433130f1db628a98731304',
