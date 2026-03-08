@@ -1744,6 +1744,12 @@
   }
 
   async function updateUIWithProfile() {
+    // Re-fetch profile to ensure we have latest data (e.g. after topup or order)
+    if (currentUser) {
+      const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+      if (profile) userProfile = profile;
+    }
+
     if (!userProfile) return;
     const balance = parseFloat(userProfile.balance || 0);
     const agentCode = userProfile.agent_code || '---';
@@ -1760,12 +1766,12 @@
     let totalGB = 0, totalSpent = 0, totalPayments = 0;
     if (orders) {
       orders.forEach(o => {
-        totalGB += parseFloat(o.bundle_gb);
-        totalSpent += parseFloat(o.amount);
+        totalGB += parseFloat(o.bundle_gb || 0);
+        totalSpent += parseFloat(o.amount || 0);
       });
     }
     if (payments) {
-      payments.forEach(p => totalPayments += parseFloat(p.amount));
+      payments.forEach(p => totalPayments += parseFloat(p.amount || 0));
     }
 
     const cards = document.querySelectorAll('#dashboardPage .stat-card .stat-number');
@@ -2149,11 +2155,11 @@
       return;
     }
 
-    const fee = amount * 0.02;
+    const fee = parseFloat(amount) * 0.02;
     const total = parseFloat(amount) + fee;
 
     const handler = PaystackPop.setup({
-      key: 'pk_test_xxxxxxxxxxxxxxxxxxxxx',
+      key: 'pk_live_6c14e62b602fe818a0433130f1db628a98731304',
       email: currentUser.email,
       amount: Math.round(total * 100),
       currency: 'GHS',
@@ -2167,20 +2173,22 @@
       },
       callback: async function(response) {
         showToast(`Payment successful! Reference: ${response.reference}`);
-        const newBalance = parseFloat(userProfile.balance) + parseFloat(amount);
+        const currentBal = parseFloat(userProfile.balance || 0);
+        const topupAmt = parseFloat(amount || 0);
+        const newBalance = currentBal + topupAmt;
+
         await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
 
         await supabaseClient.from('transactions').insert({
             user_id: currentUser.id,
             type: 'Credit',
             description: 'Wallet top-up via Paystack',
-            amount: parseFloat(amount),
+            amount: topupAmt,
             balance_after: newBalance,
             status: 'Completed'
         });
 
-        userProfile.balance = newBalance;
-        updateUIWithProfile();
+        await updateUIWithProfile();
         showPage('dashboard');
       },
       onClose: function() {
@@ -2237,7 +2245,8 @@
     let html = '';
     let subtotal = 0;
     cartItems.forEach((item, index) => {
-      subtotal += parseFloat(item.price);
+      const itemPrice = parseFloat(item.price || 0);
+      subtotal += itemPrice;
       html += `
         <div class="cart-item" data-index="${index}">
           <button class="remove-item-btn" onclick="removeCartItem(${index})">×</button>
@@ -2247,7 +2256,7 @@
             <div class="recipient">Recipient: ${item.phone}</div>
             <div class="validity">Validity: ${item.validity}</div>
           </div>
-          <div class="cart-item-price">GH₵${parseFloat(item.price).toFixed(2)}</div>
+          <div class="cart-item-price">GH₵${itemPrice.toFixed(2)}</div>
         </div>
       `;
     });
@@ -2287,31 +2296,30 @@
     updateCartDisplay();
   });
 
-  document.getElementById('processOrders').addEventListener('click', () => {
+  document.getElementById('processOrders').addEventListener('click', async () => {
     if (cartItems.length === 0) {
       showToast('Cart is empty');
       return;
     }
 
     const paymentMethod = document.querySelector('input[name="payment"]:checked').nextElementSibling.innerText;
-    const totalWithPossibleFee = parseFloat(summaryTotal.innerText.replace('₵', ''));
+    const totalWithPossibleFee = parseFloat(summaryTotal.innerText.replace(/[^\d.]/g, '')) || 0;
 
     if (paymentMethod === 'Pay with Wallet') {
-      const walletBalance = parseFloat(userProfile.balance);
+      const walletBalance = parseFloat(userProfile.balance || 0);
 
       if (walletBalance < totalWithPossibleFee) {
         showToast('Insufficient wallet balance. Please top up or use Paystack.');
         return;
       }
 
-      processOrderSubmission('Wallet', totalWithPossibleFee);
+      await processOrderSubmission('Wallet', totalWithPossibleFee);
     } else {
       // summaryTotal ALREADY includes the 2% fee if Paystack is selected (calculated in updateCartDisplay)
       const grandTotal = totalWithPossibleFee;
-      const subtotal = parseFloat(summarySubtotal.innerText.replace('₵', ''));
 
       const handler = PaystackPop.setup({
-        key: 'pk_test_xxxxxxxxxxxxxxxxxxxxx',
+        key: 'pk_live_6c14e62b602fe818a0433130f1db628a98731304',
         email: currentUser.email,
         amount: Math.round(grandTotal * 100),
         currency: 'GHS',
@@ -2320,8 +2328,8 @@
           full_name: userProfile.full_name,
           order_details: cartItems
         },
-        callback: function(response) {
-          processOrderSubmission('Paystack', totalWithPossibleFee);
+        callback: async function(response) {
+          await processOrderSubmission('Paystack', totalWithPossibleFee);
         }
       });
       handler.openIframe();
@@ -2330,10 +2338,10 @@
 
   async function processOrderSubmission(method, amount) {
     if (method === 'Wallet') {
-      const newBalance = parseFloat(userProfile.balance) - amount;
+      const currentBal = parseFloat(userProfile.balance || 0);
+      const newBalance = currentBal - amount;
       await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
-      userProfile.balance = newBalance;
-      updateUIWithProfile();
+      await updateUIWithProfile();
     }
 
     for (const item of cartItems) {
@@ -2353,7 +2361,7 @@
       type: 'Debit',
       description: `Data purchase for ${cartItems.length} recipients`,
       amount: -amount,
-      balance_after: userProfile.balance,
+      balance_after: parseFloat(userProfile.balance || 0),
       status: 'Completed'
     });
 
@@ -2440,7 +2448,7 @@
     let totalAmt = 0, completedAmt = 0, processingCount = 0, pendingCount = 0;
 
     document.getElementById('topupHistoryBody').innerHTML = trans.map(t => {
-      const amt = parseFloat(t.amount);
+      const amt = parseFloat(t.amount || 0);
       totalAmt += amt;
       if (t.status === 'Completed') completedAmt += amt;
       else if (t.status === 'Processing') processingCount++;
@@ -2478,10 +2486,12 @@
     let counts = { pending: 0, processing: 0, completed: 0, failed: 0 };
 
     document.getElementById('ordersBody').innerHTML = orders.map(o => {
-      totalAmt += parseFloat(o.amount);
-      totalGB += parseFloat(o.bundle_gb);
+      const amt = parseFloat(o.amount || 0);
+      const gb = parseFloat(o.bundle_gb || 0);
+      totalAmt += amt;
+      totalGB += gb;
       counts[o.status.toLowerCase()]++;
-      return `<tr><td>#${o.id.toString().slice(-5)}</td><td>${o.network}</td><td>${o.bundle_gb}GB</td><td>${o.recipient_phone}</td><td><span class="status-${o.status.toLowerCase()}">${o.status}</span></td><td>₵${parseFloat(o.amount).toFixed(2)}</td><td>${new Date(o.created_at).toLocaleString()}</td></tr>`;
+      return `<tr><td>#${o.id.toString().slice(-5)}</td><td>${o.network}</td><td>${gb}GB</td><td>${o.recipient_phone}</td><td><span class="status-${o.status.toLowerCase()}">${o.status}</span></td><td>₵${amt.toFixed(2)}</td><td>${new Date(o.created_at).toLocaleString()}</td></tr>`;
     }).join('');
 
     document.getElementById('totalOrdersCount').innerText = orders.length;
@@ -2508,12 +2518,13 @@
 
     let totalBalance = 0;
     document.getElementById('adminUsersBody').innerHTML = profile_list.map(u => {
-      totalBalance += parseFloat(u.balance);
+      const bal = parseFloat(u.balance || 0);
+      totalBalance += bal;
       return `
         <tr>
           <td>${u.agent_code}</td>
           <td>${u.full_name}<br><small>${u.email}</small></td>
-          <td>₵${parseFloat(u.balance).toFixed(2)}</td>
+          <td>₵${bal.toFixed(2)}</td>
           <td>${u.is_blocked ? '<span style="color:red">Blocked</span>' : '<span style="color:green">Active</span>'}</td>
           <td>
             <button onclick="adjustBalance('${u.id}', 'credit')" title="Credit"><i class="fas fa-plus-circle"></i></button>
