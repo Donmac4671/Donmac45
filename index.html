@@ -1168,6 +1168,39 @@
       color: #64748b;
     }
 
+    /* Auth Styles Integration */
+    .auth-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background: #e2eaf2;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5000;
+    }
+    .auth-container.active { display: flex; }
+    .auth-card {
+      background: white;
+      padding: 40px;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      width: 100%;
+      max-width: 450px;
+    }
+    .auth-card .logo { text-align: center; margin-bottom: 25px; }
+    .auth-card h1 { font-size: 1.8rem; color: #0b2b3c; }
+    .auth-card h1 span { color: #f5a623; }
+    .auth-card .form-group { margin-bottom: 16px; }
+    .auth-card label { display: block; margin-bottom: 6px; font-weight: 500; color: #1e3a4a; font-size: 0.85rem; }
+    .auth-card .footer-links { text-align: center; margin-top: 24px; font-size: 0.9rem; color: #64748b; }
+    .auth-card .footer-links a { color: #f5a623; text-decoration: none; font-weight: 600; cursor: pointer; }
+
     @media (max-width: 768px) {
       .sidebar-desktop { display: none; }
       .menu-toggle { display: flex; }
@@ -1179,6 +1212,60 @@
   </style>
 </head>
 <body>
+
+  <!-- AUTH SECTIONS -->
+  <div id="loginPage" class="auth-container active">
+    <div class="auth-card">
+      <div class="logo">
+        <h1>Donmac <span>Data Hub</span></h1>
+        <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">Log in to your agent account</p>
+      </div>
+      <form id="loginForm">
+        <div class="form-group"><label>Email Address</label><input type="email" id="loginEmail" class="form-control" required></div>
+        <div class="form-group"><label>Password</label><input type="password" id="loginPassword" class="form-control" required></div>
+        <button type="submit" class="btn" style="width:100%">Login</button>
+      </form>
+      <div class="footer-links">
+        <p><a onclick="showPage('forgotPassword')">Forgot Password?</a></p>
+        <p style="margin-top: 10px;">Don't have an account? <a onclick="showPage('register')">Register</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="registerPage" class="auth-container">
+    <div class="auth-card">
+      <div class="logo">
+        <h1>Donmac <span>Data Hub</span></h1>
+        <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">Create an agent account</p>
+      </div>
+      <form id="registerForm">
+        <div class="form-group"><label>Full Name</label><input type="text" id="regFullname" class="form-control" required></div>
+        <div class="form-group"><label>Email Address</label><input type="email" id="regEmail" class="form-control" required></div>
+        <div class="form-group"><label>Phone Number</label><input type="tel" id="regPhone" class="form-control" required></div>
+        <div class="form-group"><label>Password</label><input type="password" id="regPassword" class="form-control" required></div>
+        <button type="submit" class="btn" style="width:100%">Register</button>
+      </form>
+      <div class="footer-links">
+        <p>Already have an account? <a onclick="showPage('login')">Log In</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="forgotPasswordPage" class="auth-container">
+    <div class="auth-card">
+      <div class="logo">
+        <h1>Donmac <span>Data Hub</span></h1>
+        <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">Reset your password</p>
+      </div>
+      <form id="forgotForm">
+        <div class="form-group"><label>Email Address</label><input type="email" id="forgotEmail" class="form-control" required></div>
+        <button type="submit" class="btn" style="width:100%">Send Reset Link</button>
+      </form>
+      <div class="footer-links">
+        <p>Remember your password? <a onclick="showPage('login')">Log In</a></p>
+      </div>
+    </div>
+  </div>
 <div class="app">
   <!-- top bar -->
   <div class="top-bar">
@@ -1361,17 +1448,17 @@
 
         <div class="wallet-topup-section">
           <h3><i class="fas fa-wallet" style="color:#f5a623;"></i> Wallet Top-up</h3>
-          
+
           <div class="form-group">
             <label><i class="fas fa-money-bill-wave"></i> Amount (GH₵)</label>
             <input class="form-control" type="number" id="topupAmount" placeholder="Enter amount" min="1" step="0.01">
           </div>
-          
+
           <div class="form-group">
             <label><i class="fas fa-phone-alt"></i> Mobile Money Number</label>
             <input class="form-control" type="tel" id="topupPhone" placeholder="e.g., 0241234567">
           </div>
-          
+
           <div class="payment-method-selector">
             <div class="payment-method-card" id="selectPaystack" onclick="selectPaymentMethod('paystack')">
               <i class="fas fa-credit-card"></i> Paystack
@@ -1384,29 +1471,24 @@
           <div id="mobileMoneyDetails" style="display: none;">
             <div class="mobile-money-details">
               <h4 style="margin-bottom:20px;"><i class="fas fa-info-circle"></i> Payment Details</h4>
-              
+
               <div class="detail-row">
                 <span><i class="fas fa-phone"></i> Mobile Money Number:</span>
                 <span><strong>0549358359</strong> <button class="copy-btn" onclick="copyToClipboard('0549358359')"><i class="far fa-copy"></i> Copy</button></span>
               </div>
-              
+
               <div class="detail-row">
                 <span><i class="fas fa-user"></i> Account Name:</span>
                 <span><strong>Osei Michael</strong></span>
               </div>
-              
-              <div class="screenshot-upload">
-                <label><i class="fas fa-camera"></i> Upload Payment Screenshot:</label>
-                <input type="file" id="screenshotUpload" accept="image/*">
-              </div>
-              
+
               <div class="whatsapp-note">
                 <i class="fab fa-whatsapp fa-2x"></i>
-                <div>After payment, click the button below to send screenshot to our WhatsApp (+233549358359)</div>
+                <div>After payment, click the button below to send proof to our WhatsApp (+233549358359)</div>
               </div>
-              
+
               <button class="btn" onclick="submitMobileMoneyPayment()" style="width:100%;">
-                <i class="fab fa-whatsapp"></i> Submit Payment via WhatsApp
+                <i class="fab fa-whatsapp"></i> Notify via WhatsApp
               </button>
             </div>
           </div>
@@ -1414,12 +1496,12 @@
           <div id="paystackDetails" style="display: none;">
             <div class="paystack-info">
               <h4 style="margin-bottom:20px;"><i class="fas fa-lock"></i> Paystack Payment</h4>
-              
+
               <div class="fee-note">
                 <i class="fas fa-info-circle"></i> A 2% transaction fee will be applied
               </div>
-              
-              
+
+
               <button class="btn" onclick="processPaystackPayment()" style="width:100%;">
                 <i class="fas fa-credit-card"></i> Pay with Paystack
               </button>
@@ -1598,7 +1680,7 @@
       <h3 id="recipientNetworkName">MTN</h3>
       <button class="close-modal" id="closeRecipientModal">&times;</button>
     </div>
-    
+
     <div class="bundle-summary" id="bundleSummary">
       <div class="network" id="summaryNetwork">MTN</div>
       <div class="size" id="summarySize">2GB</div>
@@ -1622,22 +1704,22 @@
   // Initialize Supabase
   const supabaseUrl = 'https://bntmwrwlxuxjwckjxfti.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJudG13cndseHV4andja2p4ZnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzE1MTQsImV4cCI6MjA4ODQ0NzUxNH0.At6UxwJnLf89ABHjF6veLWTvUrbGnltuaLxuYM82d5E';
-  const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
   // Auth Guard
   let currentUser = null;
   let userProfile = null;
 
   async function checkAuth() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
-      window.location.href = 'login.html';
+      showPage('login');
       return;
     }
     currentUser = session.user;
 
     // Load profile
-    const { data: profile, error } = await supabase
+    const { data: profile, error } = await supabaseClient
       .from('profiles')
       .select('*')
       .eq('id', currentUser.id)
@@ -1650,6 +1732,7 @@
 
     userProfile = profile;
     updateUIWithProfile();
+    showPage('dashboard');
   }
 
   async function updateUIWithProfile() {
@@ -1660,8 +1743,8 @@
     document.querySelector('.wallet-box .amount').innerText = `GH₵ ${parseFloat(userProfile.balance).toFixed(2)}`;
 
     // Load Dashboard Stats
-    const { data: orders } = await supabase.from('orders').select('amount, bundle_gb').eq('user_id', currentUser.id).eq('status', 'Completed');
-    const { data: payments } = await supabase.from('transactions').select('amount').eq('user_id', currentUser.id).eq('type', 'Credit').eq('status', 'Completed');
+    const { data: orders } = await supabaseClient.from('orders').select('amount, bundle_gb').eq('user_id', currentUser.id).eq('status', 'Completed');
+    const { data: payments } = await supabaseClient.from('transactions').select('amount').eq('user_id', currentUser.id).eq('type', 'Credit').eq('status', 'Completed');
 
     let totalGB = 0, totalSpent = 0, totalPayments = 0;
     if (orders) {
@@ -1712,6 +1795,8 @@
   }
 
   function showAdminMenu() {
+    if (document.querySelector('.nav-item[data-section="admin"]')) return;
+
     const menuItems = `
       <div class="drawer-item" data-section="admin"><i class="fas fa-user-shield"></i> Admin Panel</div>
     `;
@@ -1721,16 +1806,70 @@
 
     // Add before logout
     const logoutDrawer = document.querySelector('.drawer-item[data-section="logout"]');
-    logoutDrawer.insertAdjacentHTML('beforebegin', menuItems);
+    if (logoutDrawer) logoutDrawer.insertAdjacentHTML('beforebegin', menuItems);
 
     const logoutSidebar = document.querySelector('.sidebar-desktop .nav-item[data-section="logout"]');
-    logoutSidebar.insertAdjacentHTML('beforebegin', sidebarItems);
+    if (logoutSidebar) logoutSidebar.insertAdjacentHTML('beforebegin', sidebarItems);
 
     // Re-bind events
     document.querySelectorAll('.drawer-item[data-section="admin"], .sidebar-desktop .nav-item[data-section="admin"]').forEach(n => {
       n.addEventListener('click', () => showPage('admin'));
     });
   }
+
+
+  // Auth Handlers
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) showToast(error.message); else checkAuth();
+  });
+
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fullname = document.getElementById('regFullname').value;
+    const email = document.getElementById('regEmail').value;
+    const phone = document.getElementById('regPhone').value;
+    const password = document.getElementById('regPassword').value;
+
+    const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
+    if (authError) { showToast(authError.message); return; }
+
+    if (authData.user) {
+      let agentCode = '001';
+      try {
+        const { data: profiles, error: profileError } = await supabaseClient
+          .from('profiles').select('agent_code').order('agent_code', { ascending: false }).limit(1);
+        if (!profileError && profiles && profiles.length > 0) {
+          const lastCode = parseInt(profiles[0].agent_code);
+          if (!isNaN(lastCode)) {
+            agentCode = (lastCode + 1).toString().padStart(3, '0');
+          }
+        }
+      } catch (e) { console.error("Error fetching last agent code", e); }
+
+      await supabaseClient.from('profiles').insert({
+        id: authData.user.id,
+        full_name: fullname,
+        email: email,
+        phone: phone,
+        agent_code: agentCode,
+        balance: 0.00,
+        is_blocked: false
+      });
+      showToast("Registration successful! Logging in...");
+      setTimeout(checkAuth, 1500);
+    }
+  });
+
+  document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgotEmail').value;
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+    if (error) showToast(error.message); else showToast("Reset link sent!");
+  });
 
   checkAuth();
 
@@ -1739,38 +1878,48 @@
   let cartItems = [];
   let selectedNetwork = null;
   let selectedPackage = null;
-  
+
   // Mobile drawer functions
   const menuToggle = document.getElementById('menuToggle');
   const mobileDrawer = document.getElementById('mobileDrawer');
   const overlay = document.getElementById('overlay');
   const closeDrawer = document.getElementById('closeDrawer');
-  
+
   function openDrawer() { mobileDrawer.classList.add('open'); overlay.classList.add('show'); }
   function closeDrawerFunc() { mobileDrawer.classList.remove('open'); overlay.classList.remove('show'); }
-  
+
   if (menuToggle) menuToggle.addEventListener('click', openDrawer);
   if (closeDrawer) closeDrawer.addEventListener('click', closeDrawerFunc);
   if (overlay) overlay.addEventListener('click', closeDrawerFunc);
 
   // Page switching
   const pages = {
+    login: document.getElementById('loginPage'),
+    register: document.getElementById('registerPage'),
+    forgotPassword: document.getElementById('forgotPasswordPage'),
     dashboard: document.getElementById('dashboardPage'),
     orders: document.getElementById('ordersPage'),
     topup: document.getElementById('topupPage'),
     transactions: document.getElementById('transactionsPage'),
-      admin: document.getElementById('adminPage'),
+    admin: document.getElementById('adminPage'),
     cart: document.getElementById('cartPage')
   };
-  
+
   const desktopNav = document.querySelectorAll('.sidebar-desktop .nav-item');
   const drawerItems = document.querySelectorAll('.drawer-item');
 
   window.showPage = function(pageId) {
     Object.values(pages).forEach(p => { if(p) p.classList.remove('active') });
     if (pages[pageId]) pages[pageId].classList.add('active');
+
+    // Auth pages handling
+    const isAuthPage = ['login', 'register', 'forgotPassword'].includes(pageId);
+    document.querySelector('.app').style.display = isAuthPage ? 'none' : 'flex';
+
     desktopNav.forEach(n => n.classList.toggle('active', n.getAttribute('data-section') === pageId));
     drawerItems.forEach(n => n.classList.toggle('active', n.getAttribute('data-section') === pageId));
+
+    if (pageId === 'dashboard') updateUIWithProfile();
     if (pageId === 'cart') updateCartDisplay();
     if (pageId === 'admin') loadAdminUsers();
     if (pageId === 'orders') loadOrders();
@@ -1788,8 +1937,10 @@
   }));
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.href = 'login.html';
+    await supabaseClient.auth.signOut();
+    currentUser = null;
+    userProfile = null;
+    showPage('login');
   }
   document.getElementById('quickTopupBtn').addEventListener('click', () => showPage('topup'));
 
@@ -1836,7 +1987,7 @@
   const confirmRecipient = document.getElementById('confirmRecipientBtn');
   const packagesGrid = document.getElementById('packagesGridContainer');
   const gridNetworkName = document.getElementById('gridNetworkName');
-  
+
   // Recipient modal elements
   const summaryNetwork = document.getElementById('summaryNetwork');
   const summarySize = document.getElementById('summarySize');
@@ -1848,23 +1999,23 @@
     row.addEventListener('click', (e) => {
       const network = row.getAttribute('data-network');
       const networkName = row.getAttribute('data-networkname');
-      
+
       selectedNetwork = network;
       gridNetworkName.innerText = networkName;
       gridModal.style.borderColor = networkColors[network].border;
-      
+
       // Generate package grid
       let html = '';
       packages[network].forEach(pkg => {
         html += `
-          <div class="package-grid-item" style="border-color: ${networkColors[network].border};" 
+          <div class="package-grid-item" style="border-color: ${networkColors[network].border};"
                onclick="selectPackage(${pkg.gb}, ${pkg.price}, '${networkName}', '${network}')">
             ${pkg.gb}GB - GH₵${pkg.price.toFixed(2)}
           </div>
         `;
       });
       packagesGrid.innerHTML = html;
-      
+
       gridModal.classList.add('show');
     });
   });
@@ -1872,14 +2023,14 @@
   // Select package and show recipient modal
   window.selectPackage = function(gb, price, networkName, networkKey) {
     selectedPackage = { gb, price, networkName, networkKey };
-    
+
     // Update recipient modal
     document.getElementById("recipientNetworkName").innerText = networkName;
     summaryNetwork.innerText = networkName;
     summarySize.innerText = gb + 'GB';
     summaryPrice.innerText = 'GH₵' + price.toFixed(2);
     recipientModal.style.borderColor = networkColors[networkKey].border;
-    
+
     // Close grid modal and open recipient modal
     gridModal.classList.remove('show');
     recipientModal.classList.add('show');
@@ -1896,13 +2047,13 @@
   // Confirm add to cart
   confirmRecipient.addEventListener('click', () => {
     if (!selectedPackage) return;
-    
+
     const phone = recipientInput.value.trim();
     if (!phone) {
       showToast('Please enter recipient phone number');
       return;
     }
-    
+
     cartItems.push({
       network: selectedPackage.networkName,
       gb: selectedPackage.gb,
@@ -1911,7 +2062,7 @@
       validity: '90 days',
       date: new Date().toLocaleString()
     });
-    
+
     updateCartDisplay();
     recipientModal.classList.remove('show');
     recipientInput.value = '';
@@ -1921,10 +2072,10 @@
   // Payment method selection
   window.selectPaymentMethod = function(method) {
     currentPaymentMethod = method;
-    
+
     document.getElementById('selectPaystack').classList.remove('selected');
     document.getElementById('selectMobileMoney').classList.remove('selected');
-    
+
     if (method === 'paystack') {
       document.getElementById('selectPaystack').classList.add('selected');
       document.getElementById('paystackDetails').style.display = 'block';
@@ -1955,19 +2106,13 @@
   window.submitMobileMoneyPayment = async function() {
     const amount = document.getElementById('topupAmount').value;
     const phone = document.getElementById('topupPhone').value;
-    const screenshot = document.getElementById('screenshotUpload').files[0];
-    
+
     if (!amount || !phone) {
       showToast('Please enter amount and phone number');
       return;
     }
-    
-    if (!screenshot) {
-      showToast('Please upload payment screenshot');
-      return;
-    }
-    
-    await supabase.from('transactions').insert({
+
+    await supabaseClient.from('transactions').insert({
         user_id: currentUser.id,
         type: 'Credit',
         description: 'Wallet top-up via Mobile Money (Pending verification)',
@@ -1979,22 +2124,22 @@
     const message = `Hello, I just made a payment of GH₵${amount} for my data hub wallet.\nAgent Code: ${userProfile.agent_code}\nPhone: ${phone}`;
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/233549358359?text=${encoded}`, '_blank');
-    
-    showToast('Payment submitted! Please send the screenshot on WhatsApp.');
+
+    showToast('Redirecting to WhatsApp to send payment proof...');
     showPage('dashboard');
   };
 
   window.processPaystackPayment = function() {
     const amount = document.getElementById('topupAmount').value;
-    
+
     if (!amount) {
       showToast('Please enter amount');
       return;
     }
-    
+
     const fee = amount * 0.02;
     const total = parseFloat(amount) + fee;
-    
+
     const handler = PaystackPop.setup({
       key: 'pk_test_xxxxxxxxxxxxxxxxxxxxx',
       email: currentUser.email,
@@ -2011,9 +2156,9 @@
       callback: async function(response) {
         showToast(`Payment successful! Reference: ${response.reference}`);
         const newBalance = parseFloat(userProfile.balance) + parseFloat(amount);
-        await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+        await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
 
-        await supabase.from('transactions').insert({
+        await supabaseClient.from('transactions').insert({
             user_id: currentUser.id,
             type: 'Credit',
             description: 'Wallet top-up via Paystack',
@@ -2030,7 +2175,7 @@
         showToast('Payment cancelled');
       }
     });
-    
+
     handler.openIframe();
   };
 
@@ -2068,7 +2213,7 @@
 
   function updateCartDisplay() {
     cartCountSpan.innerText = cartItems.length;
-    
+
     if (cartItems.length === 0) {
       cartItemsContainer.innerHTML = '<p style="text-align:center; color:#4f6f8f; padding:20px;">Your cart is empty</p>';
       summaryItems.innerText = '0';
@@ -2097,7 +2242,27 @@
     cartItemsContainer.innerHTML = html;
     summaryItems.innerText = cartItems.length;
     summarySubtotal.innerText = `₵${subtotal.toFixed(2)}`;
-    summaryTotal.innerText = `₵${subtotal.toFixed(2)}`;
+
+    const isPaystack = document.getElementById('payPaystack')?.checked;
+    let total = subtotal;
+
+    const summaryRows = document.getElementById('orderSummary');
+    // Remove existing fee row if any
+    const existingFee = document.getElementById('summaryFeeRow');
+    if (existingFee) existingFee.remove();
+
+    if (isPaystack) {
+      const fee = subtotal * 0.02;
+      total = subtotal + fee;
+
+      const feeRow = document.createElement('div');
+      feeRow.id = 'summaryFeeRow';
+      feeRow.className = 'summary-row';
+      feeRow.innerHTML = `<span>Fee (2%)</span><span>₵${fee.toFixed(2)}</span>`;
+      summaryRows.insertBefore(feeRow, summaryTotal.parentElement);
+    }
+
+    summaryTotal.innerText = `₵${total.toFixed(2)}`;
   }
 
   window.removeCartItem = (index) => {
@@ -2115,23 +2280,24 @@
       showToast('Cart is empty');
       return;
     }
-    
+
     const paymentMethod = document.querySelector('input[name="payment"]:checked').nextElementSibling.innerText;
-    const total = parseFloat(summaryTotal.innerText.replace('₵', ''));
-    
+    const totalWithPossibleFee = parseFloat(summaryTotal.innerText.replace('₵', ''));
+
     if (paymentMethod === 'Pay with Wallet') {
       const walletBalance = parseFloat(userProfile.balance);
-      
-      if (walletBalance < total) {
+
+      if (walletBalance < totalWithPossibleFee) {
         showToast('Insufficient wallet balance. Please top up or use Paystack.');
         return;
       }
-      
-      processOrderSubmission('Wallet', total);
+
+      processOrderSubmission('Wallet', totalWithPossibleFee);
     } else {
-      const fee = total * 0.02;
-      const grandTotal = total + fee;
-      
+      // summaryTotal ALREADY includes the 2% fee if Paystack is selected (calculated in updateCartDisplay)
+      const grandTotal = totalWithPossibleFee;
+      const subtotal = parseFloat(summarySubtotal.innerText.replace('₵', ''));
+
       const handler = PaystackPop.setup({
         key: 'pk_test_xxxxxxxxxxxxxxxxxxxxx',
         email: currentUser.email,
@@ -2153,13 +2319,13 @@
   async function processOrderSubmission(method, amount) {
     if (method === 'Wallet') {
       const newBalance = parseFloat(userProfile.balance) - amount;
-      await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+      await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
       userProfile.balance = newBalance;
       updateUIWithProfile();
     }
 
     for (const item of cartItems) {
-      await supabase.from('orders').insert({
+      await supabaseClient.from('orders').insert({
         user_id: currentUser.id,
         network: item.network,
         bundle_gb: item.gb,
@@ -2170,7 +2336,7 @@
       });
     }
 
-    await supabase.from('transactions').insert({
+    await supabaseClient.from('transactions').insert({
       user_id: currentUser.id,
       type: 'Debit',
       description: `Data purchase for ${cartItems.length} recipients`,
@@ -2184,6 +2350,10 @@
     updateCartDisplay();
     showPage('dashboard');
   }
+
+  document.querySelectorAll('input[name="payment"]').forEach(input => {
+    input.addEventListener('change', updateCartDisplay);
+  });
 
   document.getElementById('cartBtn').addEventListener('click', () => {
     showPage('cart');
@@ -2219,7 +2389,7 @@
     const status = document.getElementById('transStatus').value;
     const search = document.getElementById('transSearch').value;
 
-    let query = supabase.from('transactions').select('*').eq('user_id', currentUser.id);
+    let query = supabaseClient.from('transactions').select('*').eq('user_id', currentUser.id);
     if (dateFrom) query = query.gte('created_at', dateFrom);
     if (dateTo) query = query.lte('created_at', dateTo + 'T23:59:59');
     if (type !== 'all') query = query.eq('type', type.charAt(0).toUpperCase() + type.slice(1));
@@ -2251,7 +2421,7 @@
     const network = document.getElementById('orderNetworkFilter').value;
     const search = document.getElementById('orderSearch').value;
 
-    let query = supabase.from('orders').select('*').eq('user_id', currentUser.id);
+    let query = supabaseClient.from('orders').select('*').eq('user_id', currentUser.id);
     if (dateFrom) query = query.gte('created_at', dateFrom);
     if (dateTo) query = query.lte('created_at', dateTo + 'T23:59:59');
     if (status !== 'all') query = query.eq('status', status.charAt(0).toUpperCase() + status.slice(1));
@@ -2285,7 +2455,7 @@
     if (userProfile.email !== 'donmacdatahub@gmail.com') return;
     const search = document.getElementById('adminUserSearch').value.toLowerCase();
 
-    let query = supabase.from('profiles').select('*');
+    let query = supabaseClient.from('profiles').select('*');
     if (search) {
       query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,agent_code.ilike.%${search}%`);
     }
@@ -2319,7 +2489,7 @@
   }
 
   async function loadAdminOrders() {
-    const { data: orders, error } = await supabase
+    const { data: orders, error } = await supabaseClient
       .from('orders')
       .select('*, profiles(full_name, agent_code)')
       .order('created_at', { ascending: false });
@@ -2347,33 +2517,54 @@
   }
 
   window.updateOrderStatus = async (orderId, newStatus) => {
-    await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+    await supabaseClient.from('orders').update({ status: newStatus }).eq('id', orderId);
     showToast(`Order status updated to ${newStatus}`);
     loadAdminOrders();
   };
 
   window.deleteOrder = async (orderId) => {
     if (!confirm('Are you sure you want to delete this order?')) return;
-    await supabase.from('orders').delete().eq('id', orderId);
+    await supabaseClient.from('orders').delete().eq('id', orderId);
     showToast('Order deleted');
     loadAdminOrders();
   };
 
   window.adjustBalance = async (userId, type) => {
-    const amount = prompt(`Enter amount to ${type}:`);
-    if (!amount || isNaN(amount)) return;
+    const amountStr = prompt(`Enter amount to ${type}:`);
+    if (amountStr === null) return;
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      showToast("Please enter a valid positive number");
+      return;
+    }
 
-    const { data: profile } = await supabase.from('profiles').select('balance').eq('id', userId).single();
-    const newBalance = type === 'credit' ? parseFloat(profile.balance) + parseFloat(amount) : parseFloat(profile.balance) - parseFloat(amount);
+    const { data: profile } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
+    const currentBalance = parseFloat(profile.balance);
+    const newBalance = type === 'credit' ? currentBalance + amount : currentBalance - amount;
 
-    await supabase.from('profiles').update({ balance: newBalance }).eq('id', userId);
+    if (type === 'debit' && newBalance < 0) {
+      if (!confirm(`Warning: This will result in a negative balance (₵${newBalance.toFixed(2)}). Continue?`)) return;
+    }
+
+    await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', userId);
+
+    // Log the transaction
+    await supabaseClient.from('transactions').insert({
+      user_id: userId,
+      type: type === 'credit' ? 'Credit' : 'Debit',
+      description: `Admin ${type} adjustment`,
+      amount: type === 'credit' ? amount : -amount,
+      balance_after: newBalance,
+      status: 'Completed'
+    });
+
     showToast(`User ${type}ed successfully`);
     loadAdminUsers();
   };
 
   window.toggleBlock = async (userId, currentState) => {
     if (!confirm(`Are you sure you want to ${currentState ? 'unblock' : 'block'} this user?`)) return;
-    await supabase.from('profiles').update({ is_blocked: !currentState }).eq('id', userId);
+    await supabaseClient.from('profiles').update({ is_blocked: !currentState }).eq('id', userId);
     showToast(`User ${currentState ? 'unblocked' : 'blocked'} successfully`);
     loadAdminUsers();
   };
