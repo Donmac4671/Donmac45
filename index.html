@@ -2214,35 +2214,37 @@
             { display_name: "Original Amount", variable_name: "original_amount", value: amount }
           ]
         },
-        callback: async function(response) {
-          try {
-            showToast(`Payment successful! Reference: ${response.reference}`);
+        callback: function(response) {
+          (async () => {
+            try {
+              showToast(`Payment successful! Reference: ${response.reference}`);
 
-            // Re-fetch profile to get most current balance
-            const { data: currentP } = await supabaseClient.from('profiles').select('balance').eq('id', currentUser.id).single();
-            const currentBal = parseFloat((currentP && currentP.balance) || 0);
-            const topupAmt = parseFloat(amount || 0);
-            const newBalance = currentBal + topupAmt;
+              // Re-fetch profile to get most current balance
+              const { data: currentP } = await supabaseClient.from('profiles').select('balance').eq('id', currentUser.id).single();
+              const currentBal = parseFloat((currentP && currentP.balance) || 0);
+              const topupAmt = parseFloat(amount || 0);
+              const newBalance = currentBal + topupAmt;
 
-            const { error: profileError } = await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
-            if (profileError) throw profileError;
+              const { error: profileError } = await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+              if (profileError) throw profileError;
 
-            const { error: transError } = await supabaseClient.from('transactions').insert({
-                user_id: currentUser.id,
-                type: 'Credit',
-                description: 'Wallet top-up via Paystack',
-                amount: topupAmt,
-                balance_after: newBalance,
-                status: 'Completed'
-            });
-            if (transError) throw transError;
+              const { error: transError } = await supabaseClient.from('transactions').insert({
+                  user_id: currentUser.id,
+                  type: 'Credit',
+                  description: 'Wallet top-up via Paystack',
+                  amount: topupAmt,
+                  balance_after: newBalance,
+                  status: 'Completed'
+              });
+              if (transError) throw transError;
 
-            await updateUIWithProfile();
-            showPage('dashboard');
-          } catch (err) {
-            console.error('Topup credit error:', err);
-            showToast('Payment successful but error crediting wallet: ' + err.message);
-          }
+              await updateUIWithProfile();
+              showPage('dashboard');
+            } catch (err) {
+              console.error('Topup credit error:', err);
+              showToast('Payment successful but error crediting wallet: ' + err.message);
+            }
+          })();
         },
         onClose: function() {
           showToast('Payment window closed');
@@ -2410,8 +2412,8 @@
             full_name: userProfile.full_name,
             order_details: cartItems.map(i => ({ network: i.network, gb: i.gb, phone: i.phone, price: i.price }))
           },
-          callback: async function(response) {
-            await processOrderSubmission('Paystack', totalWithPossibleFee);
+          callback: function(response) {
+            processOrderSubmission('Paystack', totalWithPossibleFee);
           },
           onClose: function() {
             showToast('Payment window closed');
