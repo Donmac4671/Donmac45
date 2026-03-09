@@ -2043,15 +2043,21 @@
     selectedPackage = { gb, price, networkName, networkKey };
 
     // Update recipient modal
-    document.getElementById("recipientNetworkName").innerText = networkName;
-    summaryNetwork.innerText = networkName;
-    summarySize.innerText = gb + 'GB';
-    summaryPrice.innerText = 'GH₵' + price.toFixed(2);
-    recipientModal.style.borderColor = networkColors[networkKey].border;
+    const recipientHeader = document.getElementById("recipientNetworkName");
+    const summaryNet = document.getElementById("summaryNetwork");
+    const summarySz = document.getElementById("summarySize");
+    const summaryPr = document.getElementById("summaryPrice");
+    const modal = document.getElementById("recipientModal");
+
+    if (recipientHeader) recipientHeader.innerText = networkName;
+    if (summaryNet) summaryNet.innerText = networkName;
+    if (summarySz) summarySz.innerText = gb + 'GB';
+    if (summaryPr) summaryPr.innerText = 'GH₵' + price.toFixed(2);
+    if (modal) modal.style.borderColor = networkColors[networkKey].border;
 
     // Close grid modal and open recipient modal
-    gridModal.classList.remove('show');
-    recipientModal.classList.add('show');
+    if (gridModal) gridModal.classList.remove('show');
+    if (modal) modal.classList.add('show');
   };
 
   // Close modals
@@ -2130,14 +2136,19 @@
       return;
     }
 
-    await supabaseClient.from('transactions').insert({
+    const { error: logError } = await supabaseClient.from('transactions').insert({
         user_id: currentUser.id,
         type: 'Credit',
         description: 'Wallet top-up via Mobile Money (Pending verification)',
-        amount: parseFloat(amount),
-        balance_after: userProfile.balance,
+        amount: parseFloat(amount || 0),
+        balance_after: parseFloat(userProfile.balance || 0),
         status: 'Pending'
     });
+    if (logError) {
+      console.error('Logging error:', logError);
+      showToast('Error logging transaction: ' + logError.message);
+      return;
+    }
 
     const message = `Hello, I just made a payment of GH₵${amount} for my data hub wallet.\nAgent Code: ${userProfile.agent_code}\nPhone: ${phone}`;
     const encoded = encodeURIComponent(message);
@@ -2170,14 +2181,27 @@
       return;
     }
 
-    const fee = parseFloat(amount) * 0.02;
-    const total = parseFloat(amount) + fee;
+    const cleanAmount = parseFloat(amount || 0);
+    if (isNaN(cleanAmount) || cleanAmount <= 0) {
+      showToast('Please enter a valid amount');
+      return;
+    }
+
+    const fee = cleanAmount * 0.02;
+    const total = cleanAmount + fee;
+    const amountInPesewas = Math.round(total * 100);
+
+    if (isNaN(amountInPesewas) || amountInPesewas <= 0) {
+      showToast('Invalid total amount calculated');
+      return;
+    }
 
     const handler = PaystackPop.setup({
       key: 'pk_live_6c14e62b602fe818a0433130f1db628a98731304',
       email: currentUser.email,
-      amount: Math.round(total * 100),
+      amount: amountInPesewas,
       currency: 'GHS',
+      ref: 'T' + Date.now() + Math.random().toString(36).substring(7),
       metadata: {
         agent_code: userProfile.agent_code,
         full_name: userProfile.full_name,
@@ -2187,30 +2211,36 @@
         ]
       },
       callback: async function(response) {
-        showToast(`Payment successful! Reference: ${response.reference}`);
-        const currentBal = parseFloat(userProfile.balance || 0);
-        const topupAmt = parseFloat(amount || 0);
-        const newBalance = currentBal + topupAmt;
+        try {
+          showToast(`Payment successful! Reference: ${response.reference}`);
+          const currentBal = parseFloat(userProfile.balance || 0);
+          const topupAmt = parseFloat(amount || 0);
+          const newBalance = currentBal + topupAmt;
 
-        await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+          const { error: profileError } = await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+          if (profileError) throw profileError;
 
-        await supabaseClient.from('transactions').insert({
-            user_id: currentUser.id,
-            type: 'Credit',
-            description: 'Wallet top-up via Paystack',
-            amount: topupAmt,
-            balance_after: newBalance,
-            status: 'Completed'
-        });
+          const { error: transError } = await supabaseClient.from('transactions').insert({
+              user_id: currentUser.id,
+              type: 'Credit',
+              description: 'Wallet top-up via Paystack',
+              amount: topupAmt,
+              balance_after: newBalance,
+              status: 'Completed'
+          });
+          if (transError) throw transError;
 
-        await updateUIWithProfile();
-        showPage('dashboard');
+          await updateUIWithProfile();
+          showPage('dashboard');
+        } catch (err) {
+          console.error('Topup credit error:', err);
+          showToast('Payment successful but error crediting wallet: ' + err.message);
+        }
       },
       onClose: function() {
-        showToast('Payment cancelled');
+        showToast('Payment window closed');
       }
     });
-
     handler.openIframe();
   };
 
@@ -2330,6 +2360,12 @@
     } else {
       // summaryTotal ALREADY includes the 2% fee if Paystack is selected (calculated in updateCartDisplay)
       const grandTotal = totalWithPossibleFee;
+      const amountInPesewas = Math.round(grandTotal * 100);
+
+      if (isNaN(amountInPesewas) || amountInPesewas <= 0) {
+        showToast('Invalid order total');
+        return;
+      }
 
       if (typeof PaystackPop === 'undefined') {
         showToast('Paystack is not loaded. Please refresh the page.');
@@ -2349,8 +2385,9 @@
       const handler = PaystackPop.setup({
         key: 'pk_live_6c14e62b602fe818a0433130f1db628a98731304',
         email: currentUser.email,
-        amount: Math.round(grandTotal * 100),
+        amount: amountInPesewas,
         currency: 'GHS',
+        ref: 'O' + Date.now() + Math.random().toString(36).substring(7),
         metadata: {
           agent_code: userProfile.agent_code,
           full_name: userProfile.full_name,
@@ -2358,6 +2395,9 @@
         },
         callback: async function(response) {
           await processOrderSubmission('Paystack', totalWithPossibleFee);
+        },
+        onClose: function() {
+          showToast('Payment window closed');
         }
       });
       handler.openIframe();
@@ -2365,38 +2405,51 @@
   });
 
   async function processOrderSubmission(method, amount) {
-    if (method === 'Wallet') {
-      const currentBal = parseFloat(userProfile.balance || 0);
-      const newBalance = currentBal - amount;
-      await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
-      await updateUIWithProfile();
-    }
+    try {
+      if (method === 'Wallet') {
+        const currentBal = parseFloat(userProfile.balance || 0);
+        const newBalance = currentBal - amount;
+        const { error: profileError } = await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+        if (profileError) throw profileError;
+        // Profile updated, now we re-fetch it in updateUIWithProfile below
+      }
 
-    for (const item of cartItems) {
-      await supabaseClient.from('orders').insert({
+      for (const item of cartItems) {
+        const { error: orderError } = await supabaseClient.from('orders').insert({
+          user_id: currentUser.id,
+          network: item.network,
+          bundle_gb: item.gb,
+          recipient_phone: item.phone,
+          amount: item.price,
+          status: 'Pending',
+          payment_method: method
+        });
+        if (orderError) throw orderError;
+      }
+
+      // Re-fetch profile to get latest balance for the transaction log
+      const { data: latestProfile } = await supabaseClient.from('profiles').select('balance').eq('id', currentUser.id).single();
+      const balAfter = latestProfile ? latestProfile.balance : 0;
+
+      const { error: transError } = await supabaseClient.from('transactions').insert({
         user_id: currentUser.id,
-        network: item.network,
-        bundle_gb: item.gb,
-        recipient_phone: item.phone,
-        amount: item.price,
-        status: 'Pending',
-        payment_method: method
+        type: 'Debit',
+        description: `Data purchase for ${cartItems.length} recipients via ${method}`,
+        amount: -amount,
+        balance_after: balAfter,
+        status: 'Completed'
       });
+      if (transError) throw transError;
+
+      await updateUIWithProfile();
+      showToast(`Orders processed successfully via ${method}`);
+      cartItems = [];
+      updateCartDisplay();
+      showPage('dashboard');
+    } catch (err) {
+      console.error('Submission error:', err);
+      showToast('Error processing order: ' + (err.message || 'Unknown error'));
     }
-
-    await supabaseClient.from('transactions').insert({
-      user_id: currentUser.id,
-      type: 'Debit',
-      description: `Data purchase for ${cartItems.length} recipients`,
-      amount: -amount,
-      balance_after: parseFloat(userProfile.balance || 0),
-      status: 'Completed'
-    });
-
-    showToast(`Orders processed successfully via ${method}`);
-    cartItems = [];
-    updateCartDisplay();
-    showPage('dashboard');
   }
 
   document.querySelectorAll('input[name="payment"]').forEach(input => {
