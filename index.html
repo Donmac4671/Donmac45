@@ -116,39 +116,118 @@
 
     /* ----- SIDEBAR DESKTOP ----- */
     .sidebar-desktop {
-      width: 260px;
+      width: 280px;
       background: #ffffff;
-      border-right: 1px solid #d9e2ec;
-      padding: 28px 0 20px;
+      border-right: 1px solid #f0f4f8;
+      padding: 20px;
       display: flex;
       flex-direction: column;
+      gap: 8px;
     }
 
-    .sidebar-desktop .nav-item {
+    .sidebar-user-card {
+      background: #f5f7ff;
+      border-radius: 24px;
+      padding: 20px;
       display: flex;
       align-items: center;
-      padding: 16px 28px;
       gap: 16px;
-      color: #1e3a4a;
-      font-weight: 500;
-      border-left: 4px solid transparent;
-      cursor: pointer;
+      margin-bottom: 30px;
+      border: 1px solid #eef2ff;
     }
 
-    .sidebar-desktop .nav-item i {
-      width: 24px;
-      color: #4f6f8f;
-      font-size: 1.2rem;
+    .sidebar-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1.4rem;
+      text-transform: uppercase;
+      box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);
     }
 
-    .sidebar-desktop .nav-item.active {
-      background: #eef6ff;
-      border-left-color: #f5a623;
+    .sidebar-user-info .name {
+      font-weight: 700;
+      color: #1e293b;
+      font-size: 1.1rem;
+      display: block;
+    }
+
+    .sidebar-user-info .code {
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    .nav-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 1px;
+      padding: 0 16px 16px;
+      text-transform: uppercase;
+    }
+
+    .sidebar-desktop .nav-item, .drawer-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      gap: 16px;
+      color: #64748b;
       font-weight: 600;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 4px;
     }
 
-    .sidebar-desktop .nav-item.active i {
-      color: #f5a623;
+    .sidebar-desktop .nav-item i, .drawer-item i {
+      width: 24px;
+      font-size: 1.3rem;
+      color: #64748b;
+      display: flex;
+      justify-content: center;
+    }
+
+    .sidebar-desktop .nav-item:hover, .drawer-item:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .sidebar-desktop .nav-item.active, .drawer-item.active {
+      color: #3b82f6;
+    }
+
+    .sidebar-desktop .nav-item.active i, .drawer-item.active i {
+      color: #3b82f6;
+    }
+
+    .nav-item-admin, .drawer-item[data-section="admin"] {
+      background: linear-gradient(90deg, #6366f1, #d946ef) !important;
+      color: white !important;
+      margin-top: 12px;
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
+      border-radius: 16px !important;
+    }
+
+    .drawer-item[data-section="admin"] i {
+        color: white !important;
+    }
+
+    .nav-item-admin i {
+      color: white !important;
+    }
+
+    .logout-item {
+      margin-top: auto;
+      color: #ef4444 !important;
+    }
+    .logout-item i {
+        color: #ef4444 !important;
     }
 
     /* ----- MOBILE DRAWER ----- */
@@ -229,6 +308,99 @@
 
     .overlay.show {
       display: block;
+    }
+
+    /* PROFILE PAGE STYLES */
+    .profile-header-card {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 24px;
+      border: 1px solid #eef2f6;
+    }
+
+    .profile-header-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0 auto 20px;
+      text-transform: uppercase;
+    }
+
+    .profile-header-info h2 {
+      font-size: 1.8rem;
+      color: #0b2b3c;
+      margin-bottom: 8px;
+    }
+
+    .profile-agent-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #6366f1;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .profile-email-text {
+      color: #64748b;
+      display: block;
+    }
+
+    .edit-profile-card {
+      background: white;
+      border-radius: 24px;
+      padding: 32px;
+      border: 1px solid #eef2f6;
+    }
+
+    .edit-profile-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 24px;
+      color: #0b2b3c;
+    }
+
+    .input-with-icon {
+      position: relative;
+    }
+
+    .input-with-icon i {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+    }
+
+    .input-with-icon .form-control {
+      padding-left: 50px;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(90deg, #6366f1, #d946ef);
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 18px;
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-gradient:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
     }
 
     /* ----- CONTENT AREA ----- */
@@ -1387,7 +1559,6 @@
       <h1>Donmac Data Hub</h1>
     </div>
     <div class="user-profile">
-      <div class="agent-badge"><i class="fas fa-id-card"></i> Agent</div>
       <div class="balance-pill"><i class="fas fa-wallet"></i> GH₵ 0.00</div>
     </div>
   </div>
@@ -1395,11 +1566,22 @@
   <!-- mobile drawer -->
   <div class="mobile-drawer" id="mobileDrawer">
     <div class="drawer-header"><h2>Menu</h2><button class="close-drawer" id="closeDrawer">&times;</button></div>
-    <div class="drawer-item active" data-section="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
-    <div class="drawer-item" data-section="orders"><i class="fas fa-truck"></i> Orders</div>
-    <div class="drawer-item" data-section="topup"><i class="fas fa-arrow-up"></i> Top Ups</div>
-    <div class="drawer-item" data-section="transactions"><i class="fas fa-clock-rotate-left"></i> Transactions</div>
-    <div class="drawer-item" data-section="logout"><i class="fas fa-sign-out-alt"></i> Logout</div>
+    <div class="sidebar-user-card" style="margin: 0 20px 20px;">
+      <div class="sidebar-avatar" id="drawerAvatar">U</div>
+      <div class="sidebar-user-info">
+        <span class="name" id="drawerName">User Name</span>
+        <span class="code" id="drawerCode">Agent ---</span>
+      </div>
+    </div>
+    <div class="nav-label">Navigation</div>
+    <div class="drawer-item active" data-section="dashboard"><i class="fas fa-th-large"></i> Dashboard</div>
+    <div class="drawer-item" id="drawerAdminBtn" data-section="admin" style="display:none;"><i class="fas fa-shield-alt"></i> Admin Panel</div>
+    <div class="drawer-item" data-section="orders"><i class="fas fa-shopping-bag"></i> Orders</div>
+    <div class="drawer-item" data-section="transactions"><i class="fas fa-file-invoice-dollar"></i> Transactions</div>
+    <div class="drawer-item" data-section="topup"><i class="fas fa-credit-card"></i> Top Ups</div>
+    <div class="drawer-item" data-section="complaints"><i class="fas fa-comment-alt"></i> Complaints</div>
+    <div class="drawer-item" data-section="profile"><i class="fas fa-user"></i> Profile</div>
+    <div class="drawer-item logout-item" data-section="logout"><i class="fas fa-sign-out-alt"></i> Logout</div>
   </div>
   <div class="overlay" id="overlay"></div>
 
@@ -1407,15 +1589,45 @@
   <div class="main-layout">
     <!-- desktop sidebar -->
     <div class="sidebar-desktop">
-      <div class="nav-item active" data-section="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
-      <div class="nav-item" data-section="orders"><i class="fas fa-truck"></i> Orders</div>
-      <div class="nav-item" data-section="topup"><i class="fas fa-arrow-up"></i> Top Ups</div>
-      <div class="nav-item" data-section="transactions"><i class="fas fa-clock-rotate-left"></i> Transactions</div>
-      <div class="nav-item" data-section="logout"><i class="fas fa-sign-out-alt"></i> Logout</div>
+      <div class="sidebar-user-card">
+        <div class="sidebar-avatar" id="sidebarAvatar">U</div>
+        <div class="sidebar-user-info">
+          <span class="name" id="sidebarName">User Name</span>
+          <span class="code" id="sidebarCode">Agent ---</span>
+        </div>
+      </div>
+      <div class="nav-label">Navigation</div>
+      <div class="nav-item active" data-section="dashboard"><i class="fas fa-th-large"></i> Dashboard</div>
+      <div class="nav-item" data-section="orders"><i class="fas fa-shopping-bag"></i> Orders</div>
+      <div class="nav-item" data-section="transactions"><i class="fas fa-file-invoice-dollar"></i> Transactions</div>
+      <div class="nav-item" data-section="topup"><i class="fas fa-credit-card"></i> Top Ups</div>
+      <div class="nav-item" data-section="complaints"><i class="fas fa-comment-alt"></i> Complaints</div>
+      <div class="nav-item" data-section="profile"><i class="fas fa-user"></i> Profile</div>
+      <div class="nav-item nav-item-admin" id="sidebarAdminBtn" data-section="admin" style="display:none;"><i class="fas fa-shield-alt"></i> Admin</div>
+      <div class="nav-item logout-item" data-section="logout"><i class="fas fa-sign-out-alt"></i> Logout</div>
     </div>
 
     <!-- content area -->
     <div class="content-area" id="contentArea">
+      <!-- USER COMPLAINTS SECTION -->
+      <div id="complaintsPage" class="page-section">
+        <div class="topup-stat-card" style="margin-bottom:24px;">
+          <div class="label">MY COMPLAINTS</div>
+          <div class="value" id="userComplaintCount">0</div>
+        </div>
+        <div class="recent-orders">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3><i class="fas fa-comment-alt"></i> My Complaints</h3>
+            <button class="btn btn-outline" style="border-radius:60px;" onclick="showAddComplaintModal()"><i class="fas fa-plus"></i> New Complaint</button>
+          </div>
+          <table>
+            <thead><tr><th>DATE</th><th>SUBJECT</th><th>MESSAGE</th><th>STATUS</th></tr></thead>
+            <tbody id="userComplaintsBody">
+              <tr><td colspan="4" style="text-align:center; padding:40px; color:#94a3b8;">No complaints yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       <!-- DASHBOARD -->
       <div id="dashboardPage" class="page-section active">
         <div class="stats-grid">
@@ -1954,7 +2166,47 @@
         </div>
       </div>
 
-      <footer>Copyright © 2024 Donmac Data Hub. All rights reserved.</footer>
+      <!-- PROFILE PAGE -->
+      <div id="profilePage" class="page-section">
+        <div class="profile-header-card">
+          <div class="profile-header-avatar" id="profileHeaderAvatar">O</div>
+          <div class="profile-header-info">
+            <h2 id="profileHeaderName">User Name</h2>
+            <div class="profile-agent-badge"><i class="fas fa-shield-alt"></i> Agent <span id="profileHeaderCode">---</span></div>
+            <span class="profile-email-text" id="profileHeaderEmail">user@example.com</span>
+          </div>
+        </div>
+
+        <div class="edit-profile-card">
+          <h3>Edit Profile</h3>
+          <form id="profileForm">
+            <div class="form-group">
+              <label>Full Name</label>
+              <div class="input-with-icon">
+                <i class="fas fa-user"></i>
+                <input type="text" id="profileFullName" class="form-control" placeholder="Full Name">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <div class="input-with-icon">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="profileEmail" class="form-control" placeholder="Email Address" readonly>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Phone Number</label>
+              <div class="input-with-icon">
+                <i class="fas fa-phone-alt"></i>
+                <input type="tel" id="profilePhone" class="form-control" placeholder="Phone Number">
+              </div>
+            </div>
+            <button type="submit" class="btn-gradient">Save Changes</button>
+          </form>
+        </div>
+      </div>
+
+      <footer style="margin-top:auto;">Copyright © 2024 Donmac Data Hub. All rights reserved.</footer>
     </div>
   </div>
 
@@ -2047,8 +2299,43 @@
     if (!userProfile) return;
     const balance = parseFloat(userProfile.balance || 0);
     const agentCode = userProfile.agent_code || '---';
+    const fullName = userProfile.full_name || 'User';
+    const initial = fullName.charAt(0).toUpperCase();
 
-    document.querySelector('.agent-badge').innerHTML = `<i class="fas fa-id-card"></i> ${agentCode}`;
+    // Update Sidebar/Drawer Profile
+    const sidebarAvatar = document.getElementById('sidebarAvatar');
+    const drawerAvatar = document.getElementById('drawerAvatar');
+    const sidebarName = document.getElementById('sidebarName');
+    const drawerName = document.getElementById('drawerName');
+    const sidebarCode = document.getElementById('sidebarCode');
+    const drawerCode = document.getElementById('drawerCode');
+
+    if (sidebarAvatar) sidebarAvatar.innerText = initial;
+    if (drawerAvatar) drawerAvatar.innerText = initial;
+    if (sidebarName) sidebarName.innerText = fullName;
+    if (drawerName) drawerName.innerText = fullName;
+    if (sidebarCode) sidebarCode.innerText = 'Agent ' + agentCode;
+    if (drawerCode) drawerCode.innerText = 'Agent ' + agentCode;
+
+    // Update Profile Page
+    const profileHeaderAvatar = document.getElementById('profileHeaderAvatar');
+    const profileHeaderName = document.getElementById('profileHeaderName');
+    const profileHeaderCode = document.getElementById('profileHeaderCode');
+    const profileHeaderEmail = document.getElementById('profileHeaderEmail');
+    const profileFullName = document.getElementById('profileFullName');
+    const profileEmail = document.getElementById('profileEmail');
+    const profilePhone = document.getElementById('profilePhone');
+
+    if (profileHeaderAvatar) profileHeaderAvatar.innerText = initial;
+    if (profileHeaderName) profileHeaderName.innerText = fullName;
+    if (profileHeaderCode) profileHeaderCode.innerText = agentCode;
+    if (profileHeaderEmail) profileHeaderEmail.innerText = userProfile.email;
+    if (profileFullName) profileFullName.value = fullName;
+    if (profileEmail) profileEmail.value = userProfile.email;
+    if (profilePhone) profilePhone.value = userProfile.phone || '';
+
+    const agentBadge = document.querySelector('.agent-badge');
+    if (agentBadge) agentBadge.innerHTML = `<i class="fas fa-id-card"></i> ${agentCode}`;
     document.querySelector('.balance-pill').innerHTML = `<i class="fas fa-wallet"></i> GH₵ ${balance.toFixed(2)}`;
     document.querySelector('#dashboardPage .stat-card:first-child .stat-number').innerText = `GH₵ ${balance.toFixed(2)}`;
     document.querySelector('.wallet-box .amount').innerText = `GH₵ ${balance.toFixed(2)}`;
@@ -2106,26 +2393,10 @@
   }
 
   function showAdminMenu() {
-    if (document.querySelector('.nav-item[data-section="admin"]')) return;
-
-    const menuItems = `
-      <div class="drawer-item" data-section="admin"><i class="fas fa-user-shield"></i> Admin Panel</div>
-    `;
-    const sidebarItems = `
-      <div class="nav-item" data-section="admin"><i class="fas fa-user-shield"></i> Admin Panel</div>
-    `;
-
-    // Add before logout
-    const logoutDrawer = document.querySelector('.drawer-item[data-section="logout"]');
-    if (logoutDrawer) logoutDrawer.insertAdjacentHTML('beforebegin', menuItems);
-
-    const logoutSidebar = document.querySelector('.sidebar-desktop .nav-item[data-section="logout"]');
-    if (logoutSidebar) logoutSidebar.insertAdjacentHTML('beforebegin', sidebarItems);
-
-    // Re-bind events
-    document.querySelectorAll('.drawer-item[data-section="admin"], .sidebar-desktop .nav-item[data-section="admin"]').forEach(n => {
-      n.addEventListener('click', () => showPage('admin'));
-    });
+    const sidebarAdminBtn = document.getElementById('sidebarAdminBtn');
+    const drawerAdminBtn = document.getElementById('drawerAdminBtn');
+    if (sidebarAdminBtn) sidebarAdminBtn.style.display = 'flex';
+    if (drawerAdminBtn) drawerAdminBtn.style.display = 'flex';
   }
 
 
@@ -2213,7 +2484,9 @@
     topup: document.getElementById('topupPage'),
     transactions: document.getElementById('transactionsPage'),
     admin: document.getElementById('adminPage'),
-    cart: document.getElementById('cartPage')
+    cart: document.getElementById('cartPage'),
+    profile: document.getElementById('profilePage'),
+    complaints: document.getElementById('complaintsPage')
   };
 
   const desktopNav = document.querySelectorAll('.sidebar-desktop .nav-item');
@@ -2238,6 +2511,7 @@
     if (pageId === 'orders') loadOrders();
     if (pageId === 'transactions') loadTransactions();
     if (pageId === 'topup') loadTopupHistory();
+    if (pageId === 'complaints') loadUserComplaints();
     closeDrawerFunc();
   };
 
@@ -2245,6 +2519,29 @@
     const sec = n.getAttribute('data-section');
     if (sec === 'logout') handleLogout(); else showPage(sec);
   }));
+
+  const profileForm = document.getElementById('profileForm');
+  if (profileForm) {
+    profileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentUser) return;
+
+      const fullName = document.getElementById('profileFullName').value;
+      const phone = document.getElementById('profilePhone').value;
+
+      const { error } = await supabaseClient.from('profiles').update({
+        full_name: fullName,
+        phone: phone
+      }).eq('id', currentUser.id);
+
+      if (error) {
+        showToast(error.message);
+      } else {
+        showToast('Profile updated successfully');
+        updateUIWithProfile();
+      }
+    });
+  }
   drawerItems.forEach(n => n.addEventListener('click', () => {
     const sec = n.getAttribute('data-section');
     if (sec === 'logout') handleLogout(); else showPage(sec);
@@ -3307,6 +3604,45 @@
     document.getElementById('adminAppTo').value = '';
     document.getElementById('adminAppStatusFilter').value = 'all';
     loadAdminAgentApps();
+  };
+
+  window.loadUserComplaints = async () => {
+    if (!currentUser) return;
+    const { data: complaints, error } = await supabaseClient
+      .from('complaints')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if (error) return;
+
+    document.getElementById('userComplaintCount').innerText = complaints.length;
+    document.getElementById('userComplaintsBody').innerHTML = complaints.map(c => `
+      <tr>
+        <td>${formatDateTime(c.created_at)}</td>
+        <td>${c.subject}</td>
+        <td>${c.message}</td>
+        <td><span class="status-${c.status.toLowerCase()}">${c.status}</span></td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" style="text-align:center; padding:40px; color:#94a3b8;">No complaints yet.</td></tr>';
+  };
+
+  window.showAddComplaintModal = () => {
+    const subject = prompt("Enter complaint subject:");
+    if (!subject) return;
+    const message = prompt("Enter complaint message:");
+    if (!message) return;
+
+    (async () => {
+      const { error } = await supabaseClient.from('complaints').insert({
+        user_id: currentUser.id,
+        subject,
+        message,
+        status: 'Open'
+      });
+      if (error) showToast(error.message);
+      else { showToast('Complaint submitted successfully'); loadUserComplaints(); }
+    })();
   };
 
   window.loadAdminAgentApps = async () => {
