@@ -10,6 +10,8 @@
   <script src="https://js.paystack.co/v1/inline.js"></script>
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * {
       margin: 0;
@@ -701,9 +703,29 @@
       border-bottom: 1px solid #f0f4fa;
     }
 
-    .status-completed {
+    .status-completed, .status-delivered, .status-approved, .status-resolved {
       background: #dcfce7;
       color: #15803d;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-pending, .status-processing, .status-open {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-failed, .status-rejected, .status-closed {
+      background: #fee2e2;
+      color: #b91c1c;
       padding: 4px 12px;
       border-radius: 50px;
       font-size: 0.75rem;
@@ -1201,6 +1223,97 @@
     .auth-card .footer-links { text-align: center; margin-top: 24px; font-size: 0.9rem; color: #64748b; }
     .auth-card .footer-links a { color: #f5a623; text-decoration: none; font-weight: 600; cursor: pointer; }
 
+    /* Admin Styles */
+    .admin-subnav {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 12px;
+    }
+    .admin-subnav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #64748b;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 0.95rem;
+      padding: 4px 0;
+      border-bottom: 2px solid transparent;
+    }
+    .admin-subnav-item.active {
+      color: #0b2b3c;
+      border-bottom-color: #0b2b3c;
+    }
+    .admin-subnav-item i { font-size: 1.1rem; }
+
+    .admin-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .admin-filter-bar span { font-weight: 600; color: #64748b; font-size: 0.9rem; }
+    .admin-date-input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .admin-date-input input { border: none; font-size: 0.9rem; outline: none; }
+    .admin-date-input i { color: #64748b; }
+    .clear-filter { color: #ef4444; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+
+    .admin-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .admin-kpi-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .admin-kpi-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    .admin-kpi-content { flex: 1; }
+    .admin-kpi-label { font-size: 0.85rem; color: #64748b; margin-bottom: 4px; }
+    .admin-kpi-value { font-size: 1.5rem; font-weight: 700; color: #0b2b3c; }
+    .admin-kpi-subtext { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+
+    .admin-charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .admin-chart-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid #e2e8f0;
+      min-height: 350px;
+    }
+    .admin-chart-card h4 { margin-bottom: 20px; color: #0b2b3c; }
+
+    .admin-tab-content { display: none; }
+    .admin-tab-content.active { display: block; }
+
     @media (max-width: 768px) {
       .sidebar-desktop { display: none; }
       .menu-toggle { display: flex; }
@@ -1604,39 +1717,220 @@
 
       <!-- ADMIN page -->
       <div id="adminPage" class="page-section">
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-title">TOTAL USERS</div><div class="stat-number" id="adminUserCount">0</div></div>
-          <div class="stat-card"><div class="stat-title">TOTAL BALANCE</div><div class="stat-number" id="adminTotalBalance">₵0.00</div></div>
-          <div class="stat-card"><div class="stat-title">SYSTEM ORDERS</div><div class="stat-number" id="adminOrderCount">0</div></div>
+        <!-- Sub Nav -->
+        <div class="admin-subnav">
+          <div class="admin-subnav-item active" onclick="switchAdminTab('analytics')"><i class="fas fa-chart-bar"></i> Analytics</div>
+          <div class="admin-subnav-item" onclick="switchAdminTab('users')"><i class="fas fa-user-friends"></i> Users</div>
+          <div class="admin-subnav-item" onclick="switchAdminTab('orders')"><i class="fas fa-shopping-bag"></i> Orders</div>
+          <div class="admin-subnav-item" onclick="switchAdminTab('topups')"><i class="fas fa-dollar-sign"></i> Top-ups</div>
+          <div class="admin-subnav-item" onclick="switchAdminTab('complaints')"><i class="fas fa-comment-dots"></i> Complaints</div>
+          <div class="admin-subnav-item" onclick="switchAdminTab('agentapps')"><i class="fas fa-crown"></i> Agent Apps</div>
         </div>
 
-        <div class="recent-orders">
-          <h3 style="margin-bottom:20px;"><i class="fas fa-users-cog"></i> User Management</h3>
-          <div class="filter-bar" style="border-radius: 12px; margin-bottom: 15px;">
-            <input type="text" id="adminUserSearch" placeholder="Search by name, email, agent code..." class="form-control" style="max-width: 400px;" oninput="loadAdminUsers()">
+        <!-- ANALYTICS TAB -->
+        <div id="admin-analytics" class="admin-tab-content active">
+          <div class="admin-filter-bar">
+            <span>Filter by date:</span>
+            <div class="admin-date-input"><i class="fas fa-calendar"></i><input type="date" id="adminDashFrom" onchange="loadAdminAnalytics()"></div>
+            <div class="admin-date-input"><i class="fas fa-calendar"></i><input type="date" id="adminDashTo" onchange="loadAdminAnalytics()"></div>
+            <div class="clear-filter" onclick="clearAdminDashFilters()">&times; Clear</div>
           </div>
-          <table>
-            <thead><tr><th>AGENT</th><th>NAME/EMAIL</th><th>BALANCE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
-            <tbody id="adminUsersBody"></tbody>
-          </table>
+
+          <div class="admin-kpi-grid">
+            <div class="admin-kpi-card">
+              <div class="admin-kpi-icon" style="background:#eef2ff; color:#6366f1;"><i class="fas fa-users"></i></div>
+              <div class="admin-kpi-content">
+                <div class="admin-kpi-label">Total Users</div>
+                <div class="admin-kpi-value" id="kpi-total-users">0</div>
+              </div>
+            </div>
+            <div class="admin-kpi-card">
+              <div class="admin-kpi-icon" style="background:#ecfdf5; color:#10b981;"><i class="fas fa-trending-up"></i></div>
+              <div class="admin-kpi-content">
+                <div class="admin-kpi-label">Total Revenue</div>
+                <div class="admin-kpi-value" id="kpi-total-revenue">₵0.00</div>
+              </div>
+            </div>
+            <div class="admin-kpi-card">
+              <div class="admin-kpi-icon" style="background:#fff7ed; color:#f97316;"><i class="fas fa-shopping-bag"></i></div>
+              <div class="admin-kpi-content">
+                <div class="admin-kpi-label">Total Orders</div>
+                <div class="admin-kpi-value" id="kpi-total-orders">0</div>
+                <div class="admin-kpi-subtext" id="kpi-pending-orders">0 pending</div>
+              </div>
+            </div>
+            <div class="admin-kpi-card">
+              <div class="admin-kpi-icon" style="background:#fef2f2; color:#ef4444;"><i class="fas fa-exclamation-circle"></i></div>
+              <div class="admin-kpi-content">
+                <div class="admin-kpi-label">Open Complaints</div>
+                <div class="admin-kpi-value">0</div>
+                <div class="admin-kpi-subtext">0 total</div>
+              </div>
+            </div>
+            <div class="admin-kpi-card">
+              <div class="admin-kpi-icon" style="background:#f0fdf4; color:#22c55e;"><i class="fas fa-dollar-sign"></i></div>
+              <div class="admin-kpi-content">
+                <div class="admin-kpi-label">Total Top-ups</div>
+                <div class="admin-kpi-value" id="kpi-total-topups">₵0.00</div>
+              </div>
+            </div>
+            <div class="admin-kpi-card">
+              <div class="admin-kpi-icon" style="background:#f5f3ff; color:#8b5cf6;"><i class="fas fa-wallet"></i></div>
+              <div class="admin-kpi-content">
+                <div class="admin-kpi-label">Total Wallet Balance</div>
+                <div class="admin-kpi-value" id="kpi-total-wallet">₵0.00</div>
+              </div>
+            </div>
+            <div class="admin-kpi-card">
+              <div class="admin-kpi-icon" style="background:#ecfdf5; color:#10b981;"><i class="fas fa-check-circle"></i></div>
+              <div class="admin-kpi-content">
+                <div class="admin-kpi-label">Delivered Orders</div>
+                <div class="admin-kpi-value" id="kpi-delivered-orders">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-charts-grid">
+            <div class="admin-chart-card"><h4>Orders (Last 7 Days)</h4><canvas id="chart-orders-line"></canvas></div>
+            <div class="admin-chart-card"><h4>Revenue (Last 7 Days)</h4><canvas id="chart-revenue-line"></canvas></div>
+            <div class="admin-chart-card"><h4>Order Status Distribution</h4><canvas id="chart-status-pie"></canvas></div>
+            <div class="admin-chart-card"><h4>Orders by Network</h4><canvas id="chart-network-pie"></canvas></div>
+          </div>
         </div>
 
-        <div class="recent-orders" style="margin-top: 30px;">
-          <h3 style="margin-bottom:20px;"><i class="fas fa-tasks"></i> Order Management</h3>
-          <div class="filter-bar" style="border-radius: 12px; margin-bottom: 15px; gap: 10px;">
-            <select id="adminOrderStatusFilter" class="form-control" style="max-width: 150px;" onchange="loadAdminOrders()">
-              <option value="all">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Processing">Processing</option>
-              <option value="Completed">Completed</option>
-              <option value="Failed">Failed</option>
-            </select>
-            <input type="text" id="adminOrderSearch" placeholder="Search by user or phone..." class="form-control" style="max-width: 300px;" oninput="loadAdminOrders()">
+        <!-- USERS TAB -->
+        <div id="admin-users" class="admin-tab-content">
+          <div class="recent-orders" style="border:none; padding:0;">
+            <div class="admin-filter-bar" style="background:none; border:none; padding:0; margin-bottom:20px;">
+                <div class="admin-date-input" style="flex:1; max-width:400px; border-radius:12px;">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="adminUserSearch" placeholder="Search by name, email, phone, or agent code..." style="width:100%" oninput="loadAdminUsers()">
+                </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Agent Code</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Balance</th>
+                  <th>Tier</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersBody"></tbody>
+            </table>
           </div>
-          <table>
-            <thead><tr><th>ID</th><th>USER</th><th>BUNDLE</th><th>STATUS</th><th>DATE/TIME</th><th>ACTIONS</th></tr></thead>
-            <tbody id="adminOrdersBody"></tbody>
-          </table>
+        </div>
+
+        <!-- ORDERS TAB -->
+        <div id="admin-orders" class="admin-tab-content">
+          <div class="recent-orders" style="border:none; padding:0;">
+            <div class="admin-filter-bar" style="background:none; border:none; padding:0; margin-bottom:20px;">
+              <select id="adminOrderStatusFilter" class="form-control" style="max-width: 180px; border-radius:12px;" onchange="loadAdminOrders()">
+                <option value="all">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Completed">Completed</option>
+                <option value="Failed">Failed</option>
+              </select>
+              <div class="admin-date-input" style="border-radius:12px;"><i class="fas fa-calendar"></i><input type="date" id="adminOrderFrom" onchange="loadAdminOrders()"></div>
+              <div class="admin-date-input" style="border-radius:12px;"><i class="fas fa-calendar"></i><input type="date" id="adminOrderTo" onchange="loadAdminOrders()"></div>
+              <div class="clear-filter" onclick="clearAdminOrderFilters()">Clear dates</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Ref</th>
+                  <th>Network</th>
+                  <th>Bundle</th>
+                  <th>Phone</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Update</th>
+                  <th>Date & Time</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody id="adminOrdersBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TOPUPS TAB (New placeholder for verification) -->
+        <div id="admin-topups" class="admin-tab-content">
+            <div class="recent-orders">
+              <h3 style="margin-bottom:20px;"><i class="fas fa-dollar-sign"></i> Top-up Verification</h3>
+              <p style="color:#64748b; margin-bottom: 20px;">Review pending manual top-up requests.</p>
+              <table>
+                <thead><tr><th>ID</th><th>USER</th><th>AMOUNT</th><th>DATE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+                <tbody id="adminTopupsBody">
+                    <tr><td colspan="6" style="text-align:center; padding:40px; color:#94a3b8;">Feature coming soon. Please use Users tab to credit manually.</td></tr>
+                </tbody>
+              </table>
+            </div>
+        </div>
+
+        <div id="admin-complaints" class="admin-tab-content">
+          <div class="recent-orders" style="border:none; padding:0;">
+            <div class="admin-filter-bar" style="background:none; border:none; padding:0; margin-bottom:20px;">
+              <select id="adminComplaintStatusFilter" class="form-control" style="max-width: 180px; border-radius:12px;" onchange="loadAdminComplaints()">
+                <option value="all">All Statuses</option>
+                <option value="Open">Open</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
+              </select>
+              <div class="admin-date-input" style="border-radius:12px;"><i class="fas fa-calendar"></i><input type="date" id="adminComplaintFrom" onchange="loadAdminComplaints()"></div>
+              <div class="admin-date-input" style="border-radius:12px;"><i class="fas fa-calendar"></i><input type="date" id="adminComplaintTo" onchange="loadAdminComplaints()"></div>
+              <div class="clear-filter" onclick="clearAdminComplaintFilters()">Clear dates</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date & Time</th>
+                  <th>User</th>
+                  <th>Order</th>
+                  <th>Subject</th>
+                  <th>Message</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminComplaintsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="admin-agentapps" class="admin-tab-content">
+          <div class="recent-orders" style="border:none; padding:0;">
+            <div class="admin-filter-bar" style="background:none; border:none; padding:0; margin-bottom:20px;">
+              <select id="adminAppStatusFilter" class="form-control" style="max-width: 180px; border-radius:12px;" onchange="loadAdminAgentApps()">
+                <option value="all">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+              <div class="admin-date-input" style="border-radius:12px;"><i class="fas fa-calendar"></i><input type="date" id="adminAppFrom" onchange="loadAdminAgentApps()"></div>
+              <div class="admin-date-input" style="border-radius:12px;"><i class="fas fa-calendar"></i><input type="date" id="adminAppTo" onchange="loadAdminAgentApps()"></div>
+              <div class="clear-filter" onclick="clearAdminAppFilters()">Clear dates</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date & Time</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Agent Code</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminAgentAppsBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -1676,7 +1970,7 @@
   <!-- PACKAGE GRID MODAL (for selecting GB) -->
   <div class="package-grid-modal" id="packageGridModal">
     <div class="modal-header">
-      <h3 id="gridNetworkName">MTN</h3>
+      <h3 id="gridNetworkName">Select Bundle</h3>
       <button class="close-modal" id="closeGridModal">&times;</button>
     </div>
     <div class="packages-grid" id="packagesGridContainer"></div>
@@ -1690,8 +1984,8 @@
     </div>
 
     <div class="bundle-summary" id="bundleSummary">
-      <div class="network" id="summaryNetwork">MTN</div>
-      <div class="size" id="summarySize">2GB</div>
+      <div class="network" id="summaryNetwork">NETWORK</div>
+      <div class="size" id="summarySize">--- GB</div>
       <div class="price" id="summaryPrice">GH₵10.00</div>
       <div class="validity">Validity: 90 days</div>
     </div>
@@ -1938,7 +2232,9 @@
 
     if (pageId === 'dashboard') updateUIWithProfile();
     if (pageId === 'cart') updateCartDisplay();
-    if (pageId === 'admin') loadAdminUsers();
+    if (pageId === 'admin') {
+      switchAdminTab('analytics');
+    }
     if (pageId === 'orders') loadOrders();
     if (pageId === 'transactions') loadTransactions();
     if (pageId === 'topup') loadTopupHistory();
@@ -2159,6 +2455,14 @@
   };
 
   const PAYSTACK_KEY = 'pk_live_6c14e62b602fe818a0433130f1db628a98731304';
+
+  function formatDateTime(isoString) {
+    if (!isoString) return '---';
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
+    return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' • ' +
+           date.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+  }
 
   window.processPaystackPayment = function() {
     const amountInput = document.getElementById('topupAmount');
@@ -2530,7 +2834,7 @@
       const amt = parseFloat(t.amount || 0);
       const balAfter = parseFloat(t.balance_after || 0);
       if (amt > 0) credits += amt; else debits += Math.abs(amt);
-      return `<tr><td>#${t.id.toString().slice(-5)}</td><td>${t.type}</td><td>${t.description}</td><td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td><td>₵${amt.toFixed(2)}</td><td>₵${balAfter.toFixed(2)}</td><td>${new Date(t.created_at).toLocaleString()}</td></tr>`;
+      return `<tr><td>#${t.id.toString().slice(-5)}</td><td>${t.type}</td><td>${t.description}</td><td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td><td>₵${amt.toFixed(2)}</td><td>₵${balAfter.toFixed(2)}</td><td>${formatDateTime(t.created_at)}</td></tr>`;
     }).join('');
 
     document.getElementById('totalTransCount').innerText = trans.length;
@@ -2560,7 +2864,7 @@
       else if (t.status === 'Processing') processingCount++;
       else if (t.status === 'Pending') pendingCount++;
 
-      return `<tr><td>#${t.id.toString().slice(-5)}</td><td>${t.type}</td><td>${t.description}</td><td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td><td>₵${amt.toFixed(2)}</td><td>${new Date(t.created_at).toLocaleString()}</td></tr>`;
+      return `<tr><td>#${t.id.toString().slice(-5)}</td><td>${t.type}</td><td>${t.description}</td><td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td><td>₵${amt.toFixed(2)}</td><td>${formatDateTime(t.created_at)}</td></tr>`;
     }).join('');
 
     const stats = document.querySelectorAll('#topupPage .topup-stat-card .value');
@@ -2597,7 +2901,7 @@
       totalAmt += amt;
       totalGB += gb;
       counts[o.status.toLowerCase()]++;
-      return `<tr><td>#${o.id.toString().slice(-5)}</td><td>${o.network}</td><td>${gb}GB</td><td>${o.recipient_phone}</td><td><span class="status-${o.status.toLowerCase()}">${o.status}</span></td><td>₵${amt.toFixed(2)}</td><td>${new Date(o.created_at).toLocaleString()}</td></tr>`;
+      return `<tr><td>#${o.id.toString().slice(-5)}</td><td>${o.network}</td><td>${gb}GB</td><td>${o.recipient_phone}</td><td><span class="status-${o.status.toLowerCase()}">${o.status}</span></td><td>₵${amt.toFixed(2)}</td><td>${formatDateTime(o.created_at)}</td></tr>`;
     }).join('');
 
     document.getElementById('totalOrdersCount').innerText = orders.length;
@@ -2610,87 +2914,286 @@
     document.getElementById('ordersTableTitle').innerText = `Orders · ${orders.length} total`;
   }
 
+  window.switchAdminTab = function(tabId) {
+    document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.admin-subnav-item').forEach(i => i.classList.remove('active'));
+
+    const tab = document.getElementById(`admin-${tabId}`);
+    if (tab) tab.classList.add('active');
+
+    const subnavItem = document.querySelector(`.admin-subnav-item[onclick*="${tabId}"]`);
+    if (subnavItem) subnavItem.classList.add('active');
+
+    if (tabId === 'analytics') loadAdminAnalytics();
+    if (tabId === 'users') loadAdminUsers();
+    if (tabId === 'orders') loadAdminOrders();
+    if (tabId === 'topups') loadAdminTopups();
+    if (tabId === 'complaints') loadAdminComplaints();
+    if (tabId === 'agentapps') loadAdminAgentApps();
+  };
+
+  let adminCharts = {};
+
+  window.clearAdminDashFilters = function() {
+    document.getElementById('adminDashFrom').value = '';
+    document.getElementById('adminDashTo').value = '';
+    loadAdminAnalytics();
+  };
+
+  async function loadAdminAnalytics() {
+    if (!userProfile || userProfile.email !== 'donmacdatahub@gmail.com') return;
+
+    const fromDate = document.getElementById('adminDashFrom').value;
+    const toDate = document.getElementById('adminDashTo').value;
+
+    // Fetch Users
+    const { data: users } = await supabaseClient.from('profiles').select('*');
+    document.getElementById('kpi-total-users').innerText = users?.length || 0;
+
+    let totalWallet = 0;
+    users?.forEach(u => totalWallet += parseFloat(u.balance || 0));
+    document.getElementById('kpi-total-wallet').innerText = `₵${totalWallet.toFixed(2)}`;
+
+    // Fetch Orders
+    let orderQuery = supabaseClient.from('orders').select('*');
+    if (fromDate) orderQuery = orderQuery.gte('created_at', fromDate);
+    if (toDate) orderQuery = orderQuery.lte('created_at', toDate + 'T23:59:59');
+
+    const { data: orders } = await orderQuery;
+
+    let revenue = 0;
+    let pending = 0;
+    let delivered = 0;
+    let statusCounts = { Pending: 0, Processing: 0, Completed: 0, Failed: 0 };
+    let networkCounts = { MTN: 0, TELECEL: 0, AT: 0, PREMIUM: 0 };
+
+    orders?.forEach(o => {
+      if (o.status === 'Completed') {
+        revenue += parseFloat(o.amount || 0);
+        delivered++;
+      }
+      if (o.status === 'Pending') pending++;
+      statusCounts[o.status]++;
+
+      const net = (o.network || '').toUpperCase();
+      if (net.includes('MTN')) networkCounts.MTN++;
+      else if (net.includes('TELECEL')) networkCounts.TELECEL++;
+      else if (net.includes('AIRTELTIGO') || net.includes('AT')) {
+          if (net.includes('PREMIUM')) networkCounts.PREMIUM++;
+          else networkCounts.AT++;
+      }
+    });
+
+    document.getElementById('kpi-total-revenue').innerText = `₵${revenue.toFixed(2)}`;
+    document.getElementById('kpi-total-orders').innerText = orders?.length || 0;
+    document.getElementById('kpi-pending-orders').innerText = `${pending} pending`;
+    document.getElementById('kpi-delivered-orders').innerText = delivered;
+
+    // Fetch Top-ups (Credits)
+    let transQuery = supabaseClient.from('transactions').select('*').eq('type', 'Credit').eq('status', 'Completed');
+    if (fromDate) transQuery = transQuery.gte('created_at', fromDate);
+    if (toDate) transQuery = transQuery.lte('created_at', toDate + 'T23:59:59');
+
+    const { data: credits } = await transQuery;
+    let totalTopups = 0;
+    credits?.forEach(c => totalTopups += parseFloat(c.amount || 0));
+    document.getElementById('kpi-total-topups').innerText = `₵${totalTopups.toFixed(2)}`;
+
+    // Fetch Complaints count
+    const { data: compData } = await supabaseClient.from('complaints').select('status');
+    const openComps = compData?.filter(c => c.status === 'Open').length || 0;
+    document.querySelector('.admin-kpi-card:nth-child(4) .admin-kpi-value').innerText = openComps;
+    document.querySelector('.admin-kpi-card:nth-child(4) .admin-kpi-subtext').innerText = `${compData?.length || 0} total`;
+
+    renderAdminCharts(orders, statusCounts, networkCounts);
+  }
+
+  function renderAdminCharts(orders, statusCounts, networkCounts) {
+    const last7Days = [...Array(7)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toISOString().split('T')[0];
+    }).reverse();
+
+    const ordersByDay = last7Days.map(day => orders?.filter(o => o.created_at.startsWith(day)).length || 0);
+    const revenueByDay = last7Days.map(day => orders?.filter(o => o.created_at.startsWith(day) && o.status === 'Completed').reduce((sum, o) => sum + parseFloat(o.amount || 0), 0) || 0);
+
+    const labels7Days = last7Days.map(day => {
+        const d = new Date(day);
+        return d.toLocaleDateString('en-US', { weekday: 'short', day: '2-digit' });
+    });
+
+    // Destroy existing charts if they exist
+    Object.values(adminCharts).forEach(chart => chart.destroy());
+
+    // Orders Line Chart
+    adminCharts.ordersLine = new Chart(document.getElementById('chart-orders-line'), {
+      type: 'bar',
+      data: {
+        labels: labels7Days,
+        datasets: [{ label: 'Orders', data: ordersByDay, backgroundColor: '#6366f1' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Revenue Line Chart
+    adminCharts.revenueLine = new Chart(document.getElementById('chart-revenue-line'), {
+      type: 'line',
+      data: {
+        labels: labels7Days,
+        datasets: [{ label: 'Revenue (₵)', data: revenueByDay, borderColor: '#10b981', tension: 0.4, fill: false }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Status Pie Chart
+    adminCharts.statusPie = new Chart(document.getElementById('chart-status-pie'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(statusCounts),
+        datasets: [{
+          data: Object.values(statusCounts),
+          backgroundColor: ['#fbbf24', '#3b82f6', '#10b981', '#ef4444']
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Network Pie Chart
+    adminCharts.networkPie = new Chart(document.getElementById('chart-network-pie'), {
+      type: 'pie',
+      data: {
+        labels: Object.keys(networkCounts),
+        datasets: [{
+          data: Object.values(networkCounts),
+          backgroundColor: ['#f5a623', '#dc2626', '#2563eb', '#8b5cf6']
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
   async function loadAdminUsers() {
     if (userProfile.email !== 'donmacdatahub@gmail.com') return;
     const search = document.getElementById('adminUserSearch').value.toLowerCase();
 
     let query = supabaseClient.from('profiles').select('*');
     if (search) {
-      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,agent_code.ilike.%${search}%`);
+      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,agent_code.ilike.%${search}%,phone.ilike.%${search}%`);
     }
 
     const { data: profile_list, error } = await query.order('agent_code', { ascending: true });
     if (error) return;
 
-    let totalBalance = 0;
     document.getElementById('adminUsersBody').innerHTML = profile_list.map(u => {
       const bal = parseFloat(u.balance || 0);
-      totalBalance += bal;
+      const isAgent = !!u.agent_code;
       return `
         <tr>
-          <td>${u.agent_code}</td>
-          <td>${u.full_name}<br><small>${u.email}</small></td>
-          <td>₵${bal.toFixed(2)}</td>
-          <td>${u.is_blocked ? '<span style="color:red">Blocked</span>' : '<span style="color:green">Active</span>'}</td>
+          <td>${u.agent_code || '---'}</td>
+          <td>${u.full_name}</td>
+          <td>${u.email}</td>
+          <td>${u.phone || '---'}</td>
+          <td><strong>₵${bal.toFixed(2)}</strong></td>
+          <td><span style="background:${isAgent ? '#f5f3ff' : '#f1f5f9'}; color:${isAgent ? '#8b5cf6' : '#64748b'}; padding:4px 12px; border-radius:12px; font-size:0.75rem; font-weight:600;">${isAgent ? 'Agent' : 'General'}</span></td>
+          <td><span style="background:#ecfdf5; color:#10b981; padding:4px 12px; border-radius:12px; font-size:0.75rem; font-weight:600;">${u.is_blocked ? 'Blocked' : 'Active'}</span></td>
           <td>
-            <button onclick="adjustBalance('${u.id}', 'credit')" title="Credit"><i class="fas fa-plus-circle"></i></button>
-            <button onclick="adjustBalance('${u.id}', 'debit')" title="Debit"><i class="fas fa-minus-circle"></i></button>
-            <button onclick="toggleBlock('${u.id}', ${u.is_blocked})" title="${u.is_blocked ? 'Unblock' : 'Block'}">
-              <i class="fas ${u.is_blocked ? 'fa-unlock' : 'fa-user-slash'}"></i>
-            </button>
+            <div style="display:flex; gap:6px;">
+                <button onclick="adjustBalance('${u.id}', 'credit')" style="background:white; border:1px solid #e2e8f0; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:500;">Credit</button>
+                <button onclick="adjustBalance('${u.id}', 'debit')" style="background:white; border:1px solid #e2e8f0; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:500;">Debit</button>
+                <button onclick="toggleBlock('${u.id}', ${u.is_blocked})" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:500;">Block</button>
+            </div>
           </td>
         </tr>
       `;
     }).join('');
-
-    document.getElementById('adminUserCount').innerText = profile_list.length;
-    document.getElementById('adminTotalBalance').innerText = `₵${totalBalance.toFixed(2)}`;
-    loadAdminOrders();
   }
+
+  window.clearAdminOrderFilters = function() {
+    document.getElementById('adminOrderFrom').value = '';
+    document.getElementById('adminOrderTo').value = '';
+    loadAdminOrders();
+  };
 
   async function loadAdminOrders() {
     const statusFilter = document.getElementById('adminOrderStatusFilter').value;
-    const search = document.getElementById('adminOrderSearch').value.toLowerCase();
+    const fromDate = document.getElementById('adminOrderFrom').value;
+    const toDate = document.getElementById('adminOrderTo').value;
 
     let query = supabaseClient.from('orders').select('*, profiles(full_name, agent_code)');
 
-    if (statusFilter !== 'all') {
-      query = query.eq('status', statusFilter);
-    }
+    if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+    if (fromDate) query = query.gte('created_at', fromDate);
+    if (toDate) query = query.lte('created_at', toDate + 'T23:59:59');
 
     const { data: orders, error } = await query.order('created_at', { ascending: false });
-
     if (error) return;
 
-    let filtered = orders;
-    if (search) {
-      filtered = orders.filter(o =>
-        (o.profiles?.full_name || '').toLowerCase().includes(search) ||
-        (o.profiles?.agent_code || '').toLowerCase().includes(search) ||
-        (o.recipient_phone || '').toLowerCase().includes(search)
-      );
-    }
+    document.getElementById('adminOrdersBody').innerHTML = orders.map(o => {
+      const statusLabel = o.status.toLowerCase() === 'completed' ? 'delivered' : o.status.toLowerCase();
 
-    document.getElementById('adminOrderCount').innerText = filtered.length;
-    document.getElementById('adminOrdersBody').innerHTML = filtered.map(o => `
-      <tr>
-        <td>#${o.id.toString().slice(-5)}</td>
-        <td>${o.profiles?.agent_code || '???'}<br><small>${o.profiles?.full_name || 'Deleted'}</small></td>
-        <td>${o.network} ${o.bundle_gb}GB<br><small>${o.recipient_phone}</small></td>
-        <td><span class="status-${o.status.toLowerCase()}">${o.status}</span></td>
-        <td>${new Date(o.created_at).toLocaleString()}</td>
-        <td>
-          <select onchange="updateOrderStatus('${o.id}', this.value)" style="padding:4px; border-radius:4px;">
-            <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
-            <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
-            <option value="Completed" ${o.status === 'Completed' ? 'selected' : ''}>Completed</option>
-            <option value="Failed" ${o.status === 'Failed' ? 'selected' : ''}>Failed</option>
-          </select>
-          <button onclick="deleteOrder('${o.id}')" title="Delete" style="color:red; background:none; border:none; cursor:pointer;"><i class="fas fa-trash"></i></button>
-        </td>
-      </tr>
-    `).join('');
+      return `
+        <tr>
+          <td><strong>DMH${o.id.toString().padStart(3, '0')}</strong></td>
+          <td>${o.network}</td>
+          <td>${o.bundle_gb}GB</td>
+          <td>${o.recipient_phone}</td>
+          <td><strong>₵${parseFloat(o.amount || 0).toFixed(2)}</strong></td>
+          <td><span class="status-${statusLabel}">${statusLabel}</span></td>
+          <td>
+            <select onchange="updateOrderStatus('${o.id}', this.value)" style="padding:8px; border-radius:8px; border:1px solid #e2e8f0; background:#f8fafd; font-size:0.85rem;">
+              <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
+              <option value="Completed" ${o.status === 'Completed' ? 'selected' : ''}>Delivered</option>
+              <option value="Failed" ${o.status === 'Failed' ? 'selected' : ''}>Failed</option>
+            </select>
+          </td>
+          <td>${formatDateTime(o.created_at)}</td>
+          <td>
+            <button onclick="deleteOrder('${o.id}')" style="background:#ef4444; color:white; border:none; width:32px; height:32px; border-radius:8px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
+
+  async function loadAdminTopups() {
+    let query = supabaseClient.from('transactions').select('*, profiles(full_name, agent_code)').eq('type', 'Credit').order('created_at', { ascending: false });
+    const { data: trans, error } = await query;
+    if (error) return;
+
+    document.getElementById('adminTopupsBody').innerHTML = trans.map(t => {
+      return `
+        <tr>
+          <td>#${t.id.toString().slice(-5)}</td>
+          <td>${t.profiles?.agent_code || '???'}<br><small>${t.profiles?.full_name || 'Deleted'}</small></td>
+          <td><strong>₵${parseFloat(t.amount || 0).toFixed(2)}</strong></td>
+          <td>${formatDateTime(t.created_at)}</td>
+          <td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td>
+          <td>
+            ${t.status === 'Pending' ? `
+              <button onclick="updateTopupStatus('${t.id}', 'Completed', '${t.user_id}', ${t.amount})" style="background:#10b981; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;">Approve</button>
+              <button onclick="updateTopupStatus('${t.id}', 'Failed')" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;">Reject</button>
+            ` : '---'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  window.updateTopupStatus = async (transId, status, userId, amount) => {
+    if (status === 'Completed' && userId && amount) {
+        // We need to credit the user balance
+        const { data: profile } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
+        const newBal = parseFloat(profile.balance || 0) + parseFloat(amount);
+        await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
+        await supabaseClient.from('transactions').update({ status: status, balance_after: newBal }).eq('id', transId);
+    } else {
+        await supabaseClient.from('transactions').update({ status: status }).eq('id', transId);
+    }
+    showToast(`Top-up ${status}`);
+    loadAdminTopups();
+  };
 
   window.updateOrderStatus = async (orderId, newStatus) => {
     await supabaseClient.from('orders').update({ status: newStatus }).eq('id', orderId);
@@ -2743,6 +3246,136 @@
     await supabaseClient.from('profiles').update({ is_blocked: !currentState }).eq('id', userId);
     showToast(`User ${currentState ? 'unblocked' : 'blocked'} successfully`);
     loadAdminUsers();
+  };
+
+  window.clearAdminComplaintFilters = () => {
+    document.getElementById('adminComplaintFrom').value = '';
+    document.getElementById('adminComplaintTo').value = '';
+    document.getElementById('adminComplaintStatusFilter').value = 'all';
+    loadAdminComplaints();
+  };
+
+  window.loadAdminComplaints = async () => {
+    const statusFilter = document.getElementById('adminComplaintStatusFilter').value;
+    const fromDate = document.getElementById('adminComplaintFrom').value;
+    const toDate = document.getElementById('adminComplaintTo').value;
+
+    let query = supabaseClient.from('complaints').select('*, profiles(full_name, agent_code)');
+
+    if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+    if (fromDate) query = query.gte('created_at', fromDate);
+    if (toDate) query = query.lte('created_at', toDate + 'T23:59:59');
+
+    const { data: complaints, error } = await query.order('created_at', { ascending: false });
+    if (error) {
+      console.error('Error loading complaints:', error);
+      document.getElementById('adminComplaintsBody').innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">No complaints found or table doesn't exist.</td></tr>`;
+      return;
+    }
+
+    if (!complaints || complaints.length === 0) {
+      document.getElementById('adminComplaintsBody').innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">No complaints found.</td></tr>`;
+      return;
+    }
+
+    document.getElementById('adminComplaintsBody').innerHTML = complaints.map(c => {
+      return `
+        <tr>
+          <td>${formatDateTime(c.created_at)}</td>
+          <td>${c.profiles?.full_name || 'Unknown'}<br><small>${c.profiles?.agent_code || '---'}</small></td>
+          <td>${c.order_id ? '#' + c.order_id.toString().slice(-5) : '---'}</td>
+          <td>${c.subject || '---'}</td>
+          <td><div style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${c.message}">${c.message || '---'}</div></td>
+          <td><span class="status-${c.status.toLowerCase()}">${c.status}</span></td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <select onchange="updateComplaintStatus('${c.id}', this.value)" style="padding:6px; border-radius:8px; border:1px solid #e2e8f0; font-size:0.8rem;">
+                <option value="Open" ${c.status === 'Open' ? 'selected' : ''}>Open</option>
+                <option value="Resolved" ${c.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
+                <option value="Closed" ${c.status === 'Closed' ? 'selected' : ''}>Closed</option>
+              </select>
+              <button onclick="deleteComplaint('${c.id}')" style="background:#ef4444; color:white; border:none; width:28px; height:28px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  };
+
+  window.clearAdminAppFilters = () => {
+    document.getElementById('adminAppFrom').value = '';
+    document.getElementById('adminAppTo').value = '';
+    document.getElementById('adminAppStatusFilter').value = 'all';
+    loadAdminAgentApps();
+  };
+
+  window.loadAdminAgentApps = async () => {
+    const statusFilter = document.getElementById('adminAppStatusFilter').value;
+    const fromDate = document.getElementById('adminAppFrom').value;
+    const toDate = document.getElementById('adminAppTo').value;
+
+    let query = supabaseClient.from('agent_applications').select('*');
+
+    if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+    if (fromDate) query = query.gte('created_at', fromDate);
+    if (toDate) query = query.lte('created_at', toDate + 'T23:59:59');
+
+    const { data: apps, error } = await query.order('created_at', { ascending: false });
+    if (error) {
+      console.error('Error loading apps:', error);
+      document.getElementById('adminAgentAppsBody').innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">No applications found or table doesn't exist.</td></tr>`;
+      return;
+    }
+
+    if (!apps || apps.length === 0) {
+      document.getElementById('adminAgentAppsBody').innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">No applications found.</td></tr>`;
+      return;
+    }
+
+    document.getElementById('adminAgentAppsBody').innerHTML = apps.map(a => {
+      return `
+        <tr>
+          <td>${formatDateTime(a.created_at)}</td>
+          <td>${a.full_name || '---'}</td>
+          <td>${a.email || '---'}</td>
+          <td>${a.phone || '---'}</td>
+          <td>${a.agent_code || '---'}</td>
+          <td><span class="status-${a.status.toLowerCase()}">${a.status}</span></td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <select onchange="updateAppStatus('${a.id}', this.value)" style="padding:6px; border-radius:8px; border:1px solid #e2e8f0; font-size:0.8rem;">
+                <option value="Pending" ${a.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Approved" ${a.status === 'Approved' ? 'selected' : ''}>Approved</option>
+                <option value="Rejected" ${a.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
+              </select>
+              <button onclick="deleteApp('${a.id}')" style="background:#ef4444; color:white; border:none; width:28px; height:28px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  };
+
+  window.updateComplaintStatus = async (id, status) => {
+    const { error } = await supabaseClient.from('complaints').update({ status }).eq('id', id);
+    if (error) showToast(error.message); else { showToast('Complaint status updated'); loadAdminComplaints(); }
+  };
+
+  window.deleteComplaint = async (id) => {
+    if (!confirm('Are you sure you want to delete this complaint?')) return;
+    const { error } = await supabaseClient.from('complaints').delete().eq('id', id);
+    if (error) showToast(error.message); else { showToast('Complaint deleted'); loadAdminComplaints(); }
+  };
+
+  window.updateAppStatus = async (id, status) => {
+    const { error } = await supabaseClient.from('agent_applications').update({ status }).eq('id', id);
+    if (error) showToast(error.message); else { showToast('Application status updated'); loadAdminAgentApps(); }
+  };
+
+  window.deleteApp = async (id) => {
+    if (!confirm('Are you sure you want to delete this application?')) return;
+    const { error } = await supabaseClient.from('agent_applications').delete().eq('id', id);
+    if (error) showToast(error.message); else { showToast('Application deleted'); loadAdminAgentApps(); }
   };
 
   // Initialize
