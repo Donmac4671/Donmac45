@@ -2390,7 +2390,7 @@
 
     // Load profile
     const { data: profile, error } = await supabaseClient
-      .from('profiles')
+      .from('profile')
       .select('*')
       .eq('id', currentUser.id)
       .single();
@@ -2423,7 +2423,7 @@
     try {
       // Re-fetch profile to ensure we have latest data (e.g. after topup or order)
       if (currentUser) {
-        const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+        const { data: profile, error } = await supabaseClient.from('profile').select('*').eq('id', currentUser.id).single();
         if (profile && !error) {
           userProfile = profile;
         } else if (currentUser.email && currentUser.email.toLowerCase() === 'donmacdatahub@gmail.com') {
@@ -2623,7 +2623,7 @@
           try {
             // Fetch only the latest agent code to determine the next one
             const { data: latestProfiles, error: profileError } = await supabaseClient
-              .from('profiles')
+              .from('profile')
               .select('agent_code')
               .order('agent_code', { ascending: false })
               .limit(1);
@@ -2634,16 +2634,22 @@
                 agentCode = (lastCode + 1).toString().padStart(3, '0');
               }
             } else if (profileError) {
-                console.warn("Could not fetch agent code sequence (likely RLS). Trying alternative fetch.");
-                // Fallback: try fetching all codes if order fails or is restricted
-                const { data: allProfiles } = await supabaseClient.from('profiles').select('agent_code');
-                if (allProfiles && allProfiles.length > 0) {
-                    let maxCodeVal = 0;
-                    allProfiles.forEach(p => {
-                        const code = parseInt(p.agent_code);
-                        if (!isNaN(code) && code > maxCodeVal) maxCodeVal = code;
-                    });
-                    agentCode = (maxCodeVal + 1).toString().padStart(3, '0');
+                console.warn("Could not fetch agent code sequence:", profileError.message);
+
+                // If it's a 'column not found' error, we should probably stop or handle it
+                if (profileError.message.includes('agent_code')) {
+                    console.error("The 'agent_code' column is missing from the 'profile' table.");
+                } else {
+                    // Fallback: try fetching all codes if order fails or is restricted
+                    const { data: allProfiles, error: allErr } = await supabaseClient.from('profile').select('agent_code');
+                    if (!allErr && allProfiles && allProfiles.length > 0) {
+                        let maxCodeVal = 0;
+                        allProfiles.forEach(p => {
+                            const code = parseInt(p.agent_code);
+                            if (!isNaN(code) && code > maxCodeVal) maxCodeVal = code;
+                        });
+                        agentCode = (maxCodeVal + 1).toString().padStart(3, '0');
+                    }
                 }
             }
           } catch (e) {
@@ -2664,7 +2670,7 @@
             is_blocked: false
           };
 
-          const { error: profErr } = await supabaseClient.from('profiles').upsert(profileData, { onConflict: 'id' });
+          const { error: profErr } = await supabaseClient.from('profile').upsert(profileData, { onConflict: 'id' });
           if (profErr) {
             console.error("Profile insert error:", profErr);
             // Check for common error codes
@@ -2804,7 +2810,7 @@
       const fullName = document.getElementById('profileFullName').value;
       const phone = document.getElementById('profilePhone').value;
 
-      const { error } = await supabaseClient.from('profiles').update({
+      const { error } = await supabaseClient.from('profile').update({
         full_name: fullName,
         phone: phone
       }).eq('id', currentUser.id);
@@ -3096,12 +3102,12 @@
               showToast(`Payment successful! Reference: ${response.reference}`);
 
               // Re-fetch profile to get most current balance
-              const { data: currentP } = await supabaseClient.from('profiles').select('balance').eq('id', currentUser.id).single();
+              const { data: currentP } = await supabaseClient.from('profile').select('balance').eq('id', currentUser.id).single();
               const currentBal = parseFloat((currentP && currentP.balance) || 0);
               const topupAmt = parseFloat(amount || 0);
               const newBalance = currentBal + topupAmt;
 
-              const { error: profileError } = await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+              const { error: profileError } = await supabaseClient.from('profile').update({ balance: newBalance }).eq('id', currentUser.id);
               if (profileError) throw profileError;
 
               const { error: transError } = await supabaseClient.from('transactions').insert({
@@ -3310,7 +3316,7 @@
       if (method === 'Wallet') {
         const currentBal = parseFloat(userProfile.balance || 0);
         const newBalance = currentBal - amount;
-        const { error: profileError } = await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+        const { error: profileError } = await supabaseClient.from('profile').update({ balance: newBalance }).eq('id', currentUser.id);
         if (profileError) throw profileError;
         // Profile updated, now we re-fetch it in updateUIWithProfile below
       }
@@ -3329,7 +3335,7 @@
       }
 
       // Re-fetch profile to get latest balance for the transaction log
-      const { data: latestProfile } = await supabaseClient.from('profiles').select('balance').eq('id', currentUser.id).single();
+      const { data: latestProfile } = await supabaseClient.from('profile').select('balance').eq('id', currentUser.id).single();
       const balAfter = latestProfile ? latestProfile.balance : 0;
 
       const { error: transError } = await supabaseClient.from('transactions').insert({
@@ -3522,7 +3528,7 @@
     const toDate = document.getElementById('adminDashTo').value;
 
     // Fetch Users
-    const { data: users } = await supabaseClient.from('profiles').select('*');
+    const { data: users } = await supabaseClient.from('profile').select('*');
     document.getElementById('kpi-total-users').innerText = users?.length || 0;
 
     let totalWallet = 0;
@@ -3652,7 +3658,7 @@
     if (!isAdmin()) return;
     const search = document.getElementById('adminUserSearch').value.toLowerCase();
 
-    let query = supabaseClient.from('profiles').select('*');
+    let query = supabaseClient.from('profile').select('*');
     if (search) {
       query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,agent_code.ilike.%${search}%,phone.ilike.%${search}%`);
     }
@@ -3707,7 +3713,7 @@
     const fromDate = document.getElementById('adminOrderFrom').value;
     const toDate = document.getElementById('adminOrderTo').value;
 
-    let query = supabaseClient.from('orders').select('*, profiles(full_name, agent_code)');
+    let query = supabaseClient.from('orders').select('*, profile(full_name, agent_code)');
 
     if (statusFilter !== 'all') query = query.eq('status', statusFilter);
     if (fromDate) query = query.gte('created_at', fromDate);
@@ -3745,7 +3751,7 @@
   }
 
   async function loadAdminTopups() {
-    let query = supabaseClient.from('transactions').select('*, profiles(full_name, agent_code)').eq('type', 'Credit').order('created_at', { ascending: false });
+    let query = supabaseClient.from('transactions').select('*, profile(full_name, agent_code)').eq('type', 'Credit').order('created_at', { ascending: false });
     const { data: trans, error } = await query;
     if (error) return;
 
@@ -3771,9 +3777,9 @@
   window.updateTopupStatus = async (transId, status, userId, amount) => {
     if (status === 'Completed' && userId && amount) {
         // We need to credit the user balance
-        const { data: profile } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
+        const { data: profile } = await supabaseClient.from('profile').select('balance').eq('id', userId).single();
         const newBal = parseFloat(profile.balance || 0) + parseFloat(amount);
-        await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
+        await supabaseClient.from('profile').update({ balance: newBal }).eq('id', userId);
         await supabaseClient.from('transactions').update({ status: status, balance_after: newBal }).eq('id', transId);
     } else {
         await supabaseClient.from('transactions').update({ status: status }).eq('id', transId);
@@ -3804,7 +3810,7 @@
       return;
     }
 
-    const { data: profile } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
+    const { data: profile } = await supabaseClient.from('profile').select('balance').eq('id', userId).single();
     const currentBalance = parseFloat(profile.balance || 0);
     const newBalance = type === 'credit' ? currentBalance + amount : currentBalance - amount;
 
@@ -3812,7 +3818,7 @@
       if (!confirm(`Warning: This will result in a negative balance (₵${newBalance.toFixed(2)}). Continue?`)) return;
     }
 
-    await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', userId);
+    await supabaseClient.from('profile').update({ balance: newBalance }).eq('id', userId);
 
     // Log the transaction
     await supabaseClient.from('transactions').insert({
@@ -3830,7 +3836,7 @@
 
   window.toggleBlock = async (userId, currentState) => {
     if (!confirm(`Are you sure you want to ${currentState ? 'unblock' : 'block'} this user?`)) return;
-    await supabaseClient.from('profiles').update({ is_blocked: !currentState }).eq('id', userId);
+    await supabaseClient.from('profile').update({ is_blocked: !currentState }).eq('id', userId);
     showToast(`User ${currentState ? 'unblocked' : 'blocked'} successfully`);
     loadAdminUsers();
   };
@@ -3847,7 +3853,7 @@
     const fromDate = document.getElementById('adminComplaintFrom').value;
     const toDate = document.getElementById('adminComplaintTo').value;
 
-    let query = supabaseClient.from('complaints').select('*, profiles(full_name, agent_code)');
+    let query = supabaseClient.from('complaints').select('*, profile(full_name, agent_code)');
 
     if (statusFilter !== 'all') query = query.eq('status', statusFilter);
     if (fromDate) query = query.gte('created_at', fromDate);
