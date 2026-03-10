@@ -2619,36 +2619,64 @@
         }
 
         if (authData.user) {
-      let agentCode = '001';
-      try {
-        const { data: profiles, error: profileError } = await supabaseClient
-          .from('profiles').select('agent_code');
-        if (!profileError && profiles && profiles.length > 0) {
-          let maxCodeVal = 0;
-          profiles.forEach(p => {
-            const code = parseInt(p.agent_code);
-            if (!isNaN(code) && code > maxCodeVal) {
-              maxCodeVal = code;
-            }
-          });
-          agentCode = (maxCodeVal + 1).toString().padStart(3, '0');
-        }
-      } catch (e) { console.error("Error fetching last agent code", e); }
+          let agentCode = '001';
+          try {
+            // Fetch only the latest agent code to determine the next one
+            const { data: latestProfiles, error: profileError } = await supabaseClient
+              .from('profiles')
+              .select('agent_code')
+              .order('agent_code', { ascending: false })
+              .limit(1);
 
-      const { error: profErr } = await supabaseClient.from('profiles').upsert({
-        id: authData.user.id,
-        full_name: fullname,
-        email: email,
-        phone: phone,
-        agent_code: agentCode,
-        balance: 0.00,
-        is_blocked: false
-      }, { onConflict: 'id' });
-      if (profErr) {
-        console.error("Profile insert error:", profErr);
-        showToast("Error creating profile: " + profErr.message);
-        return;
-      }
+            if (!profileError && latestProfiles && latestProfiles.length > 0) {
+              const lastCode = parseInt(latestProfiles[0].agent_code);
+              if (!isNaN(lastCode)) {
+                agentCode = (lastCode + 1).toString().padStart(3, '0');
+              }
+            } else if (profileError) {
+                console.warn("Could not fetch agent code sequence (likely RLS). Trying alternative fetch.");
+                // Fallback: try fetching all codes if order fails or is restricted
+                const { data: allProfiles } = await supabaseClient.from('profiles').select('agent_code');
+                if (allProfiles && allProfiles.length > 0) {
+                    let maxCodeVal = 0;
+                    allProfiles.forEach(p => {
+                        const code = parseInt(p.agent_code);
+                        if (!isNaN(code) && code > maxCodeVal) maxCodeVal = code;
+                    });
+                    agentCode = (maxCodeVal + 1).toString().padStart(3, '0');
+                }
+            }
+          } catch (e) {
+            console.error("Error generating agent code:", e);
+            // If all fails, we'll try with a timestamp-based fallback to avoid unique constraint error
+            agentCode = 'A' + Date.now().toString().slice(-3);
+          }
+
+          // Important: We use the user-provided data.
+          // Note: 'number' from prompt is mapped to 'phone' column.
+          const profileData = {
+            id: authData.user.id,
+            full_name: fullname,
+            email: email,
+            phone: phone,
+            agent_code: agentCode,
+            balance: 0.00,
+            is_blocked: false
+          };
+
+          const { error: profErr } = await supabaseClient.from('profiles').upsert(profileData, { onConflict: 'id' });
+          if (profErr) {
+            console.error("Profile insert error:", profErr);
+            // Check for common error codes
+            if (profErr.code === '23505') {
+                showToast("Error: An account with this detail (likely Agent Code) already exists.");
+            } else if (profErr.code === '42501') {
+                showToast("Permission denied: Database restricted. Please contact admin.");
+            } else {
+                showToast(`Error creating profile: ${profErr.message}`);
+            }
+            return;
+          }
           showToast(`Registration successful! Your Agent Code is ${agentCode}. Logging in...`);
           setTimeout(checkAuth, 2000);
         }
