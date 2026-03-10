@@ -64,20 +64,6 @@
       gap: 16px;
     }
 
-    .agent-badge {
-      background: #1f4e6f;
-      padding: 6px 16px;
-      border-radius: 40px;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .agent-badge i {
-      color: #fbbf24;
-    }
-
     .balance-pill {
       background: #0f3b4c;
       padding: 6px 20px;
@@ -1080,6 +1066,65 @@
       flex: 1;
     }
 
+    /* COMPLAINT MODAL STYLES */
+    .complaint-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 36px;
+      padding: 32px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+      z-index: 600;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .complaint-modal.show {
+      display: block;
+    }
+
+    .complaint-modal h3 {
+        font-size: 1.5rem;
+        margin-bottom: 24px;
+        color: #0b2b3c;
+    }
+
+    .complaint-modal .form-group {
+        margin-bottom: 20px;
+    }
+
+    .complaint-modal label {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .complaint-modal .form-control {
+        border-radius: 12px;
+        padding: 14px 20px;
+        border: 1.5px solid #e2e8f0;
+        background: #f8fafd;
+    }
+
+    .btn-complaint-submit {
+        background: linear-gradient(90deg, #6366f1, #d946ef);
+        color: white;
+        border: none;
+        width: 100%;
+        padding: 16px;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
     /* CART PAGE */
     .cart-page {
       background: white;
@@ -1621,9 +1666,9 @@
             <button class="btn btn-outline" style="border-radius:60px;" onclick="showAddComplaintModal()"><i class="fas fa-plus"></i> New Complaint</button>
           </div>
           <table>
-            <thead><tr><th>DATE</th><th>SUBJECT</th><th>MESSAGE</th><th>STATUS</th></tr></thead>
+            <thead><tr><th>DATE & TIME</th><th>ORDER</th><th>SUBJECT</th><th>STATUS</th><th>ADMIN REPLY</th></tr></thead>
             <tbody id="userComplaintsBody">
-              <tr><td colspan="4" style="text-align:center; padding:40px; color:#94a3b8;">No complaints yet.</td></tr>
+              <tr><td colspan="5" style="text-align:center; padding:40px; color:#94a3b8;">No complaints yet.</td></tr>
             </tbody>
           </table>
         </div>
@@ -2105,8 +2150,8 @@
                   <th>User</th>
                   <th>Order</th>
                   <th>Subject</th>
-                  <th>Message</th>
                   <th>Status</th>
+                  <th>Admin Reply</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -2252,6 +2297,49 @@
       <button class="btn" id="confirmRecipientBtn">Add to Cart</button>
     </div>
   </div>
+
+  <!-- NEW COMPLAINT MODAL -->
+  <div class="complaint-modal" id="complaintModal">
+    <div class="modal-header">
+      <h3>New Complaint</h3>
+      <button class="close-modal" id="closeComplaintModal">&times;</button>
+    </div>
+    <form id="newComplaintForm">
+      <div class="form-group">
+        <label>Phone Number (affected)</label>
+        <input type="tel" id="compPhone" class="form-control" placeholder="e.g., 0549358359" required>
+      </div>
+      <div class="form-group">
+        <label>Network</label>
+        <select id="compNetwork" class="form-control" required>
+          <option value="">Select network</option>
+          <option value="mtn">MTN</option>
+          <option value="telecel">Telecel</option>
+          <option value="at">AirtelTigo Big Time</option>
+          <option value="premium">AirtelTigo Premium</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Data Package</label>
+        <select id="compPackage" class="form-control" required disabled>
+          <option value="">Select network first</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Date of Issue</label>
+        <input type="date" id="compDate" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label>Subject</label>
+        <input type="text" id="compSubject" class="form-control" placeholder="e.g. Data bundle not delivered" required>
+      </div>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea id="compMessage" class="form-control" rows="4" placeholder="Describe your issue..." required></textarea>
+      </div>
+      <button type="submit" class="btn-complaint-submit">Submit Complaint</button>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -2334,8 +2422,6 @@
     if (profileEmail) profileEmail.value = userProfile.email;
     if (profilePhone) profilePhone.value = userProfile.phone || '';
 
-    const agentBadge = document.querySelector('.agent-badge');
-    if (agentBadge) agentBadge.innerHTML = `<i class="fas fa-id-card"></i> ${agentCode}`;
     document.querySelector('.balance-pill').innerHTML = `<i class="fas fa-wallet"></i> GH₵ ${balance.toFixed(2)}`;
     document.querySelector('#dashboardPage .stat-card:first-child .stat-number').innerText = `GH₵ ${balance.toFixed(2)}`;
     document.querySelector('.wallet-box .amount').innerText = `GH₵ ${balance.toFixed(2)}`;
@@ -3580,18 +3666,26 @@
         <tr>
           <td>${formatDateTime(c.created_at)}</td>
           <td>${c.profiles?.full_name || 'Unknown'}<br><small>${c.profiles?.agent_code || '---'}</small></td>
-          <td>${c.order_id ? '#' + c.order_id.toString().slice(-5) : '---'}</td>
-          <td>${c.subject || '---'}</td>
-          <td><div style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${c.message}">${c.message || '---'}</div></td>
+          <td>
+            <div style="font-size:0.85rem;"><strong>${c.network || '---'}</strong></div>
+            <div style="font-size:0.75rem; color:#64748b;">${c.data_package || '---'}</div>
+            <div style="font-size:0.75rem; color:#64748b;">${c.phone || '---'}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;">${c.subject || '---'}</div>
+            <div style="font-size:0.75rem; color:#64748b; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.message}">${c.message || '---'}</div>
+          </td>
           <td><span class="status-${c.status.toLowerCase()}">${c.status}</span></td>
+          <td><div style="font-size:0.85rem; color:#1e293b; max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${c.admin_reply || ''}">${c.admin_reply || '<span style="color:#94a3b8; font-style:italic;">No reply</span>'}</div></td>
           <td>
             <div style="display:flex; gap:6px;">
+              <button onclick="replyToComplaint('${c.id}')" style="background:#6366f1; color:white; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:0.75rem;"><i class="fas fa-reply"></i> Reply</button>
               <select onchange="updateComplaintStatus('${c.id}', this.value)" style="padding:6px; border-radius:8px; border:1px solid #e2e8f0; font-size:0.8rem;">
                 <option value="Open" ${c.status === 'Open' ? 'selected' : ''}>Open</option>
                 <option value="Resolved" ${c.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
                 <option value="Closed" ${c.status === 'Closed' ? 'selected' : ''}>Closed</option>
               </select>
-              <button onclick="deleteComplaint('${c.id}')" style="background:#ef4444; color:white; border:none; width:28px; height:28px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
+              <button onclick="deleteComplaint('${c.id}')" style="background:#ef4444; color:white; border:none; width:32px; height:32px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash" style="font-size:0.75rem;"></i></button>
             </div>
           </td>
         </tr>
@@ -3620,30 +3714,86 @@
     document.getElementById('userComplaintsBody').innerHTML = complaints.map(c => `
       <tr>
         <td>${formatDateTime(c.created_at)}</td>
-        <td>${c.subject}</td>
-        <td>${c.message}</td>
+        <td>
+          <div style="font-size:0.85rem;"><strong>${c.network || '---'}</strong></div>
+          <div style="font-size:0.75rem; color:#64748b;">${c.data_package || '---'}</div>
+          <div style="font-size:0.75rem; color:#64748b;">${c.phone || '---'}</div>
+        </td>
+        <td>
+          <div style="font-weight:600;">${c.subject || '---'}</div>
+          <div style="font-size:0.75rem; color:#64748b; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.message}">${c.message || '---'}</div>
+        </td>
         <td><span class="status-${c.status.toLowerCase()}">${c.status}</span></td>
+        <td><div style="font-size:0.85rem; color:#1e293b;">${c.admin_reply || '<span style="color:#94a3b8; font-style:italic;">No reply yet</span>'}</div></td>
       </tr>
-    `).join('') || '<tr><td colspan="4" style="text-align:center; padding:40px; color:#94a3b8;">No complaints yet.</td></tr>';
+    `).join('') || '<tr><td colspan="5" style="text-align:center; padding:40px; color:#94a3b8;">No complaints yet.</td></tr>';
   };
+
+  const complaintModal = document.getElementById('complaintModal');
+  const closeComplaintModal = document.getElementById('closeComplaintModal');
+  const compNetworkSelect = document.getElementById('compNetwork');
+  const compPackageSelect = document.getElementById('compPackage');
+  const newComplaintForm = document.getElementById('newComplaintForm');
 
   window.showAddComplaintModal = () => {
-    const subject = prompt("Enter complaint subject:");
-    if (!subject) return;
-    const message = prompt("Enter complaint message:");
-    if (!message) return;
-
-    (async () => {
-      const { error } = await supabaseClient.from('complaints').insert({
-        user_id: currentUser.id,
-        subject,
-        message,
-        status: 'Open'
-      });
-      if (error) showToast(error.message);
-      else { showToast('Complaint submitted successfully'); loadUserComplaints(); }
-    })();
+    newComplaintForm.reset();
+    compPackageSelect.innerHTML = '<option value="">Select network first</option>';
+    compPackageSelect.disabled = true;
+    complaintModal.classList.add('show');
   };
+
+  closeComplaintModal.addEventListener('click', () => {
+    complaintModal.classList.remove('show');
+  });
+
+  compNetworkSelect.addEventListener('change', (e) => {
+    const network = e.target.value;
+    if (!network) {
+      compPackageSelect.innerHTML = '<option value="">Select network first</option>';
+      compPackageSelect.disabled = true;
+      return;
+    }
+
+    let options = '<option value="">Select data package</option>';
+    if (packages[network]) {
+      packages[network].forEach(pkg => {
+        options += `<option value="${pkg.gb}GB - GH₵${pkg.price.toFixed(2)}">${pkg.gb}GB - GH₵${pkg.price.toFixed(2)}</option>`;
+      });
+    }
+    compPackageSelect.innerHTML = options;
+    compPackageSelect.disabled = false;
+  });
+
+  newComplaintForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const phone = document.getElementById('compPhone').value;
+    const network = compNetworkSelect.options[compNetworkSelect.selectedIndex].text;
+    const dataPackage = compPackageSelect.value;
+    const issueDate = document.getElementById('compDate').value;
+    const subject = document.getElementById('compSubject').value;
+    const message = document.getElementById('compMessage').value;
+
+    const { error } = await supabaseClient.from('complaints').insert({
+      user_id: currentUser.id,
+      phone,
+      network,
+      data_package: dataPackage,
+      issue_date: issueDate,
+      subject,
+      message,
+      status: 'Open'
+    });
+
+    if (error) {
+      showToast(error.message);
+    } else {
+      showToast('Complaint submitted successfully');
+      complaintModal.classList.remove('show');
+      loadUserComplaints();
+    }
+  });
 
   window.loadAdminAgentApps = async () => {
     const statusFilter = document.getElementById('adminAppStatusFilter').value;
@@ -3695,6 +3845,23 @@
   window.updateComplaintStatus = async (id, status) => {
     const { error } = await supabaseClient.from('complaints').update({ status }).eq('id', id);
     if (error) showToast(error.message); else { showToast('Complaint status updated'); loadAdminComplaints(); }
+  };
+
+  window.replyToComplaint = async (id) => {
+    const reply = prompt("Enter your reply to the user:");
+    if (reply === null) return;
+
+    const { error } = await supabaseClient.from('complaints').update({
+        admin_reply: reply,
+        status: 'Resolved'
+    }).eq('id', id);
+
+    if (error) {
+        showToast(error.message);
+    } else {
+        showToast('Reply sent successfully');
+        loadAdminComplaints();
+    }
   };
 
   window.deleteComplaint = async (id) => {
