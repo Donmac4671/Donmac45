@@ -32,7 +32,7 @@
       width: 100%;
       max-width: 1400px;
       background: #ffffff;
-      display: flex;
+      display: none;
       flex-direction: column;
       box-shadow: 0 0 30px rgba(0,20,30,0.1);
       position: relative;
@@ -2346,15 +2346,41 @@
   // Initialize Supabase
   const supabaseUrl = 'https://bntmwrwlxuxjwckjxfti.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJudG13cndseHV4andja2p4ZnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzE1MTQsImV4cCI6MjA4ODQ0NzUxNH0.At6UxwJnLf89ABHjF6veLWTvUrbGnltuaLxuYM82d5E';
-  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+  let supabaseClient;
+  try {
+    if (typeof supabase !== 'undefined') {
+      supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+    } else {
+      console.error("Supabase SDK not loaded");
+      showToast("Critical Error: Supabase SDK not loaded. Please check your internet connection.");
+    }
+  } catch (e) {
+    console.error("Failed to initialize Supabase client:", e);
+  }
 
   // Auth Guard
   let currentUser = null;
   let userProfile = null;
 
-  async function checkAuth() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
+  async function checkAuth(isManualLogin = false) {
+    if (!supabaseClient) {
+        console.error('checkAuth called but supabaseClient is null');
+        return;
+    }
+    let session;
+    try {
+        const res = await supabaseClient.auth.getSession();
+        session = res.data ? res.data.session : null;
+    } catch (e) {
+        console.error('getSession failed:', e);
+    }
+
     if (!session) {
+      if (isManualLogin) {
+          console.error('Session missing after manual login');
+          showToast('Login failed: Session not established.');
+      }
       currentUser = null;
       userProfile = null;
       showPage('login');
@@ -2385,8 +2411,7 @@
     updateUIWithProfile();
 
     // Only redirect to dashboard if we are currently on an auth page
-    // We determine current page by checking which one has 'active' class
-    const authPages = ['loginPage', 'registerPage', 'forgotPasswordPage'];
+    const authPages = ['login', 'register', 'forgotPassword'];
     const activePageId = Object.keys(pages).find(key => pages[key] && pages[key].classList.contains('active'));
 
     if (authPages.includes(activePageId)) {
@@ -2537,25 +2562,63 @@
 
 
   // Auth Handlers
-  document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) showToast(error.message); else checkAuth();
-  });
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      const originalText = btn.innerText;
+      btn.innerText = 'Logging in...';
+      btn.disabled = true;
 
-  document.getElementById('registerForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const fullname = document.getElementById('regFullname').value;
-    const email = document.getElementById('regEmail').value;
-    const phone = document.getElementById('regPhone').value;
-    const password = document.getElementById('regPassword').value;
+      try {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
 
-    const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
-    if (authError) { showToast(authError.message); return; }
+        if (!supabaseClient) {
+            showToast("Database connection not initialized.");
+            return;
+        }
 
-    if (authData.user) {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          showToast(error.message);
+        } else {
+          await checkAuth(true);
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        showToast('An unexpected error occurred during login.');
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    });
+  }
+
+  const registerForm = document.getElementById('registerForm');
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      const originalText = btn.innerText;
+      btn.innerText = 'Registering...';
+      btn.disabled = true;
+
+      try {
+        const fullname = document.getElementById('regFullname').value;
+        const email = document.getElementById('regEmail').value;
+        const phone = document.getElementById('regPhone').value;
+        const password = document.getElementById('regPassword').value;
+
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
+        if (authError) {
+          showToast(authError.message);
+          return;
+        }
+
+        if (authData.user) {
       let agentCode = '001';
       try {
         const { data: profiles, error: profileError } = await supabaseClient
@@ -2586,17 +2649,45 @@
         showToast("Error creating profile: " + profErr.message);
         return;
       }
-      showToast(`Registration successful! Your Agent Code is ${agentCode}. Logging in...`);
-      setTimeout(checkAuth, 2000);
-    }
-  });
+          showToast(`Registration successful! Your Agent Code is ${agentCode}. Logging in...`);
+          setTimeout(checkAuth, 2000);
+        }
+      } catch (err) {
+        console.error('Registration error:', err);
+        showToast('An unexpected error occurred during registration.');
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    });
+  }
 
-  document.getElementById('forgotForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('forgotEmail').value;
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
-    if (error) showToast(error.message); else showToast("Reset link sent!");
-  });
+  const forgotForm = document.getElementById('forgotForm');
+  if (forgotForm) {
+    forgotForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      const originalText = btn.innerText;
+      btn.innerText = 'Sending...';
+      btn.disabled = true;
+
+      try {
+        const email = document.getElementById('forgotEmail').value;
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+        if (error) {
+          showToast(error.message);
+        } else {
+          showToast("Reset link sent!");
+        }
+      } catch (err) {
+        console.error('Forgot password error:', err);
+        showToast('An error occurred. Please try again.');
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    });
+  }
 
   checkAuth();
 
@@ -2645,11 +2736,16 @@
     }
 
     Object.values(pages).forEach(p => { if(p) p.classList.remove('active') });
-    if (pages[pageId]) pages[pageId].classList.add('active');
+    if (pages[pageId]) {
+        pages[pageId].classList.add('active');
+    }
 
     // Auth pages handling
     const isAuthPage = ['login', 'register', 'forgotPassword'].includes(pageId);
-    document.querySelector('.app').style.display = isAuthPage ? 'none' : 'flex';
+    const appEl = document.querySelector('.app');
+    if (appEl) {
+        appEl.style.display = isAuthPage ? 'none' : 'flex';
+    }
 
     desktopNav.forEach(n => n.classList.toggle('active', n.getAttribute('data-section') === pageId));
     drawerItems.forEach(n => n.classList.toggle('active', n.getAttribute('data-section') === pageId));
