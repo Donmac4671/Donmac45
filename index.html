@@ -1962,9 +1962,9 @@
         </div>
 
         <div class="recent-orders">
-          <h3 style="margin-bottom:12px;" id="transTableTitle">Transactions · 0 total</h3>
+          <h3 style="margin-bottom:12px;" id="transTableTitle"><i class="fas fa-history"></i> Transactions · 0 total</h3>
           <table>
-            <thead><tr><th>TRANSACTION ID</th><th>TYPE</th><th>DESCRIPTION</th><th>STATUS</th><th>AMOUNT</th><th>BALANCE</th><th>DATE</th></tr></thead>
+            <thead><tr><th>TRANSACTION ID</th><th>TYPE</th><th>DESCRIPTION</th><th>STATUS</th><th>AMOUNT</th><th>BALANCE</th><th>DATE & TIME</th></tr></thead>
             <tbody id="transactionsBody">
               <!-- JS dynamic load -->
             </tbody>
@@ -2355,6 +2355,8 @@
   async function checkAuth() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
+      currentUser = null;
+      userProfile = null;
       showPage('login');
       return;
     }
@@ -2369,19 +2371,45 @@
 
     if (error || !profile) {
       console.error('Error loading profile:', error);
-      return;
+      // Robustness: If profile is missing but it's the admin, we still want to allow entry
+      if (currentUser.email && currentUser.email.toLowerCase() === 'donmacdatahub@gmail.com') {
+        userProfile = { email: currentUser.email, full_name: 'Admin', balance: 0, agent_code: 'ADM' };
+      } else {
+        showToast("Profile not found. Please contact support.");
+        return;
+      }
+    } else {
+      userProfile = profile;
     }
 
-    userProfile = profile;
     updateUIWithProfile();
-    showPage('dashboard');
+
+    // Only redirect to dashboard if we are currently on an auth page
+    // We determine current page by checking which one has 'active' class
+    const authPages = ['loginPage', 'registerPage', 'forgotPasswordPage'];
+    const activePageId = Object.keys(pages).find(key => pages[key] && pages[key].classList.contains('active'));
+
+    if (authPages.includes(activePageId)) {
+      showPage('dashboard');
+    }
   }
 
   async function updateUIWithProfile() {
-    // Re-fetch profile to ensure we have latest data (e.g. after topup or order)
-    if (currentUser) {
-      const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
-      if (profile) userProfile = profile;
+    try {
+      // Re-fetch profile to ensure we have latest data (e.g. after topup or order)
+      if (currentUser) {
+        const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+        if (profile && !error) {
+          userProfile = profile;
+        } else if (currentUser.email && currentUser.email.toLowerCase() === 'donmacdatahub@gmail.com') {
+          // If admin profile fetch fails, ensure we have a fallback so admin isn't locked out
+          if (!userProfile) {
+            userProfile = { email: currentUser.email, full_name: 'Admin', balance: 0, agent_code: 'ADM' };
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Profile refresh error:', e);
     }
 
     if (!userProfile) return;
@@ -2460,8 +2488,10 @@
     }
 
     // Admin check
-    if (userProfile.email === 'donmacdatahub@gmail.com') {
+    if (isAdmin()) {
       showAdminMenu();
+    } else {
+      hideAdminMenu();
     }
   }
 
@@ -2478,11 +2508,31 @@
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
   }
 
+  function isAdmin() {
+    const email = (userProfile && userProfile.email) || (currentUser && currentUser.email);
+    return !!(email && email.toLowerCase() === 'donmacdatahub@gmail.com');
+  }
+
   function showAdminMenu() {
     const sidebarAdminBtn = document.getElementById('sidebarAdminBtn');
     const drawerAdminBtn = document.getElementById('drawerAdminBtn');
-    if (sidebarAdminBtn) sidebarAdminBtn.style.display = 'flex';
-    if (drawerAdminBtn) drawerAdminBtn.style.display = 'flex';
+    if (sidebarAdminBtn) {
+        sidebarAdminBtn.style.setProperty('display', 'flex', 'important');
+    }
+    if (drawerAdminBtn) {
+        drawerAdminBtn.style.setProperty('display', 'flex', 'important');
+    }
+  }
+
+  function hideAdminMenu() {
+    const sidebarAdminBtn = document.getElementById('sidebarAdminBtn');
+    const drawerAdminBtn = document.getElementById('drawerAdminBtn');
+    if (sidebarAdminBtn) {
+        sidebarAdminBtn.style.setProperty('display', 'none', 'important');
+    }
+    if (drawerAdminBtn) {
+        drawerAdminBtn.style.setProperty('display', 'none', 'important');
+    }
   }
 
 
@@ -2509,16 +2559,20 @@
       let agentCode = '001';
       try {
         const { data: profiles, error: profileError } = await supabaseClient
-          .from('profiles').select('agent_code').order('agent_code', { ascending: false }).limit(1);
+          .from('profiles').select('agent_code');
         if (!profileError && profiles && profiles.length > 0) {
-          const lastCode = parseInt(profiles[0].agent_code);
-          if (!isNaN(lastCode)) {
-            agentCode = (lastCode + 1).toString().padStart(3, '0');
-          }
+          let maxCodeVal = 0;
+          profiles.forEach(p => {
+            const code = parseInt(p.agent_code);
+            if (!isNaN(code) && code > maxCodeVal) {
+              maxCodeVal = code;
+            }
+          });
+          agentCode = (maxCodeVal + 1).toString().padStart(3, '0');
         }
       } catch (e) { console.error("Error fetching last agent code", e); }
 
-      await supabaseClient.from('profiles').insert({
+      const { error: profErr } = await supabaseClient.from('profiles').upsert({
         id: authData.user.id,
         full_name: fullname,
         email: email,
@@ -2526,9 +2580,14 @@
         agent_code: agentCode,
         balance: 0.00,
         is_blocked: false
-      });
-      showToast("Registration successful! Logging in...");
-      setTimeout(checkAuth, 1500);
+      }, { onConflict: 'id' });
+      if (profErr) {
+        console.error("Profile insert error:", profErr);
+        showToast("Error creating profile: " + profErr.message);
+        return;
+      }
+      showToast(`Registration successful! Your Agent Code is ${agentCode}. Logging in...`);
+      setTimeout(checkAuth, 2000);
     }
   });
 
@@ -2579,6 +2638,12 @@
   const drawerItems = document.querySelectorAll('.drawer-item');
 
   window.showPage = function(pageId) {
+    // Security check for Admin page
+    if (pageId === 'admin' && !isAdmin()) {
+      showPage('dashboard');
+      return;
+    }
+
     Object.values(pages).forEach(p => { if(p) p.classList.remove('active') });
     if (pages[pageId]) pages[pageId].classList.add('active');
 
@@ -3196,6 +3261,7 @@
 
   async function loadTransactions() {
     if (!currentUser) return;
+    updateUIWithProfile(); // Ensure balance is fresh
     const dateFrom = document.getElementById('transDateFrom').value;
     const dateTo = document.getElementById('transDateTo').value;
     const type = document.getElementById('transType').value;
@@ -3229,6 +3295,7 @@
 
   async function loadTopupHistory() {
     if (!currentUser) return;
+    updateUIWithProfile();
     const { data: trans, error } = await supabaseClient
       .from('transactions')
       .select('*')
@@ -3259,6 +3326,7 @@
 
   async function loadOrders() {
     if (!currentUser) return;
+    updateUIWithProfile();
     const dateFrom = document.getElementById('orderDateFrom').value;
     const dateTo = document.getElementById('orderDateTo').value;
     const status = document.getElementById('orderStatusFilter').value;
@@ -3324,7 +3392,7 @@
   };
 
   async function loadAdminAnalytics() {
-    if (!userProfile || userProfile.email !== 'donmacdatahub@gmail.com') return;
+    if (!isAdmin()) return;
 
     const fromDate = document.getElementById('adminDashFrom').value;
     const toDate = document.getElementById('adminDashTo').value;
@@ -3457,7 +3525,7 @@
   }
 
   async function loadAdminUsers() {
-    if (userProfile.email !== 'donmacdatahub@gmail.com') return;
+    if (!isAdmin()) return;
     const search = document.getElementById('adminUserSearch').value.toLowerCase();
 
     let query = supabaseClient.from('profiles').select('*');
@@ -3466,25 +3534,37 @@
     }
 
     const { data: profile_list, error } = await query.order('agent_code', { ascending: true });
-    if (error) return;
+    if (error) {
+      console.error("Error loading users:", error);
+      document.getElementById('adminUsersBody').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:#94a3b8;">Error loading users: ${error.message}</td></tr>`;
+      return;
+    }
+
+    if (!profile_list || profile_list.length === 0) {
+      document.getElementById('adminUsersBody').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:#94a3b8;">No users found.</td></tr>`;
+      return;
+    }
 
     document.getElementById('adminUsersBody').innerHTML = profile_list.map(u => {
       const bal = parseFloat(u.balance || 0);
       const isAgent = !!u.agent_code;
+      const statusBg = u.is_blocked ? '#fee2e2' : '#ecfdf5';
+      const statusColor = u.is_blocked ? '#ef4444' : '#10b981';
+
       return `
         <tr>
-          <td>${u.agent_code || '---'}</td>
+          <td><strong>${u.agent_code || '---'}</strong></td>
           <td>${u.full_name}</td>
           <td>${u.email}</td>
           <td>${u.phone || '---'}</td>
           <td><strong>₵${bal.toFixed(2)}</strong></td>
           <td><span style="background:${isAgent ? '#f5f3ff' : '#f1f5f9'}; color:${isAgent ? '#8b5cf6' : '#64748b'}; padding:4px 12px; border-radius:12px; font-size:0.75rem; font-weight:600;">${isAgent ? 'Agent' : 'General'}</span></td>
-          <td><span style="background:#ecfdf5; color:#10b981; padding:4px 12px; border-radius:12px; font-size:0.75rem; font-weight:600;">${u.is_blocked ? 'Blocked' : 'Active'}</span></td>
+          <td><span style="background:${statusBg}; color:${statusColor}; padding:4px 12px; border-radius:12px; font-size:0.75rem; font-weight:600;">${u.is_blocked ? 'Blocked' : 'Active'}</span></td>
           <td>
             <div style="display:flex; gap:6px;">
                 <button onclick="adjustBalance('${u.id}', 'credit')" style="background:white; border:1px solid #e2e8f0; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:500;">Credit</button>
                 <button onclick="adjustBalance('${u.id}', 'debit')" style="background:white; border:1px solid #e2e8f0; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:500;">Debit</button>
-                <button onclick="toggleBlock('${u.id}', ${u.is_blocked})" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:500;">Block</button>
+                <button onclick="toggleBlock('${u.id}', ${u.is_blocked})" style="background:${u.is_blocked ? '#10b981' : '#ef4444'}; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:500;">${u.is_blocked ? 'Unblock' : 'Block'}</button>
             </div>
           </td>
         </tr>
