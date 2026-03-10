@@ -3746,8 +3746,8 @@
     complaintModal.classList.remove('show');
   });
 
-  compNetworkSelect.addEventListener('change', (e) => {
-    const network = e.target.value;
+  const updateCompPackages = () => {
+    const network = compNetworkSelect.value;
     if (!network) {
       compPackageSelect.innerHTML = '<option value="">Select network first</option>';
       compPackageSelect.disabled = true;
@@ -3762,7 +3762,10 @@
     }
     compPackageSelect.innerHTML = options;
     compPackageSelect.disabled = false;
-  });
+  };
+
+  compNetworkSelect.addEventListener('change', updateCompPackages);
+  compNetworkSelect.addEventListener('input', updateCompPackages);
 
   newComplaintForm.addEventListener('submit', async (e) => {
     e.preventDefault();
